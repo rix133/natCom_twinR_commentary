@@ -1,0 +1,388 @@
+---
+title: 'Suplementary Material 1: Code to Reproduce Analysis and Plots'
+author: "Richard Meitern"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+options(digits = 2)
+options(scipen = 9)
+options(knitr.kable.NA="")
+```
+
+## Introduction
+
+The aim of this document is to display the R code needed the reproduce the findings of the main text. This documents needs the twinR package to be installed to run.
+
+```{r}
+#cleanup memory
+gcstuff <- gc(verbose=FALSE); rm(gcstuff);
+```
+
+
+```{r}
+#get last birth adding function
+source("./R/last_birth.R")
+
+#simplified twinR summary tables 
+source("./R/twinR_summary.R")
+
+#fix twinR compute predictions to do prediction with no lambda  as well
+source("./R/twinR_predictions.R")
+
+#simple convenience functions
+source("./R/utils.R")
+```
+
+
+```{r}
+## Identify number of CPU cores available for parallel computing,
+## note: using a large number may lead RAM to max out, so you may have to adjust
+## that according to your infrastructure:
+nb_cores <- min(c(50L, parallel::detectCores() - 1))
+
+## Set option in spaMM:
+spaMM::spaMM.options(nb_cores = nb_cores)
+```
+
+
+## Data import 
+
+The Estonian dataset has been formatted to include the same columns as *the data_births_all* dataset from the **twinR** package. The only difference is that the columns *pop* and *monthly* are excluded as these are constant.
+
+```{r}
+#Import and preproccess Estonian Data
+
+data_births_monthly_EE <- readRDS("./data/data_births_all_EE.rds")
+
+#the twinR package expects population to be present
+data_births_monthly_EE$pop <- "Estonia" 
+
+## Expand the birth level data for the fit of statistical models:
+data_births_monthly_EE <- twinR::expand_data(data_births_monthly_EE)
+
+data_births_monthly_EE <- add_last_birth(data_births_monthly_EE)
+
+data_births_monthly_EE_not_last <- data_births_monthly_EE[!data_births_monthly_EE$last,]
+
+#make the aggregates
+dmm_EE <- twinR::aggregate_data(data_births_monthly_EE)
+dmm_EE$prob_twin <- dmm_EE$twin_total / dmm_EE$births_total
+
+dmm_EE_nl <- twinR::aggregate_data(data_births_monthly_EE_not_last)
+dmm_EE_nl$prob_twin <- dmm_EE_nl$twin_total / dmm_EE_nl$births_total
+```
+
+
+```{r}
+ee_tbl <- twinR::build_data_summary.table(data_births_monthly_EE)
+ee_tbl_nl <- twinR::build_data_summary.table(data_births_monthly_EE_not_last)
+```
+
+\tiny
+```{r}
+
+  eetbls <- rbind(ee_tbl[-1,4:ncol(ee_tbl)-1],ee_tbl_nl[-1,4:ncol(ee_tbl_nl)-1])
+eetbls$Subset <- c("All data", "No last birth")
+knitr::kable(eetbls,
+             caption = paste0("Data summary table of Estonian data",
+                              " with and without last born child")) 
+```
+\normalsize
+
+
+## Data import Original
+
+```{r}
+##Import and pre-proccess twinR package data
+
+## Filter the raw data to only keep data with monthly resolution:
+data_births_monthly <- twinR::filter_data(twinR::data_births_all) 
+
+## Expand the birth level data for the fit of statistical models:
+data_births_monthly <- twinR::expand_data(data_births_monthly) 
+
+data_births_monthly <- add_last_birth(data_births_monthly)
+data_births_monthly_not_last <- data_births_monthly[!data_births_monthly$last,]
+
+dmm_orig <- twinR::aggregate_data(data_births_monthly)
+dmm_orig$prob_twin <- dmm_orig$twin_total /dmm_orig$births_total
+
+dmm_orig_nl <- twinR::aggregate_data(data_births_monthly_not_last)
+dmm_orig_nl$prob_twin <- dmm_orig_nl$twin_total /dmm_orig_nl$births_total
+
+```
+
+\tiny
+```{r}
+knitr::kable(twinR::build_data_summary.table(data_births_monthly_not_last)[-2],
+             caption = "Data sumary table without last born child")
+```
+\normalsize
+
+## Fitting models
+
+```{r}
+#' Fit Predictions
+#'
+#' This function fits a model using the given formula and dataset and 
+#' computes predictions. The model is fit using the \code{\link[spaMM]{fitme}}
+#' function from the \strong{spaMM} package.
+#' 
+#' @param dataset A data frame containing the data to be used for fitting the model.
+#' @param formula A formula specifying the model to be fit.
+#' @param predict Logical value indicating whether to do predictions. Default is TRUE.
+#' @param nb_boot Number of bootstrap samples to use when computing predictions.
+#'  Default is 1000.
+#' @param predictionsDir Directory where precomputed predictions are stored.
+#'  Default is "./data/predictions".
+#' 
+#' @return A list containing the fitted model object and a data frame with
+#'  computed predictions.
+fitPredictions <- function(dataset, formula,
+                           predict=TRUE,
+                           nb_boot=1000,
+                           predictionsDir = "./data/predictions"){
+  
+  if(!dir.exists(predictionsDir)) dir.create(predictionsDir)
+  
+  args <- list(formula = stats::as.formula(formula),
+             data = dataset, 
+             family = stats::binomial(link = "logit"),
+             method = "PQL/L")
+  
+  fit <-  twinR::fit_model_safely(timeout = Inf, .args = args)
+  
+  fitName <- deparse(substitute(dataset))
+  #TODO maybe add formula also to the fitName like:
+  #fitName <- paste0(form2str(stats::as.formula(formula)),fitName)
+   
+  predDataFname <- paste0(predictionsDir,"/",fitName ,"data_fig.rds")
+  if(!file.exists(predDataFname) & predict){
+    min_births <- min(dataset$births_total)
+    max_births <- max(dataset$births_total)
+    nd <- data.frame(births_total = min_births:max_births)
+    data_fig <- compute_predictions(fit,
+                                    newdata = nd,
+                                    nb_boot = nb_boot)
+    
+    
+    saveRDS(data_fig, predDataFname)
+
+  } else {
+    if(file.exists(predDataFname)){
+      warning("Pre-computed predictions returned from file:\n", predDataFname,
+            "\n If you want to re-run this time intensive step delete the file!")
+    data_fig <- readRDS(predDataFname)
+    } else {
+      data_fig <- list(results = NULL)
+    }
+    
+  }
+  
+  #garbage collecion after spaMM multi-core proccess
+  gcstuff <- gc(verbose=FALSE)
+  
+  return(list(fit=fit, results=data_fig$results))
+}
+```
+
+
+### Full Data
+
+
+```{r}
+## Estonia - mother level data
+formula <- "cbind(twin_total, singleton_total) ~ 1 + births_total"
+dmm_EE_fit <- fitPredictions(dmm_EE, formula)
+
+knitr::kable(build_fit_summary.table(dmm_EE_fit$fit))
+```
+
+```{r}
+## Estonia - birth level data
+formula <- "twin ~ 1 + poly(cbind(age, parity), 3) + (1|maternal_id)"
+dbm_EE_fit <- fitPredictions(data_births_monthly_EE, formula, predict = F)
+
+knitr::kable(build_fit_summary.table(dbm_EE_fit$fit))
+```
+
+
+```{r}
+## TwinR - mother level data
+formula <- "cbind(twin_total, singleton_total) ~ 1 + births_total + (1|pop)"
+dmm_orig_fit <- fitPredictions(dmm_orig, formula)
+
+knitr::kable(build_fit_summary.table(dmm_orig_fit$fit))
+```
+
+```{r}
+## TwinR - birth level data
+formula <- "twin ~ 1 + poly(cbind(age, parity), 3) + (1|maternal_id) + (1|pop)"
+dbm_orig_fit <- fitPredictions(data_births_monthly, formula, predict = F)
+
+knitr::kable(build_fit_summary.table(dbm_orig_fit$fit))
+```
+
+
+### No Last Births Data
+
+
+```{r}
+## Estonia
+formula <- "cbind(twin_total, singleton_total) ~ 1 + births_total"
+dmm_EE_nl_fit <- fitPredictions(dmm_EE_nl, formula)
+
+knitr::kable(build_fit_summary.table(dmm_EE_nl_fit$fit))
+```
+
+```{r}
+## Estonia - birth level data
+formula <- "twin ~ 1 + poly(cbind(age, parity), 3) + (1|maternal_id)"
+dbm_EE_nl_fit <- fitPredictions(data_births_monthly_EE_not_last, formula,
+                                predict = F)
+
+knitr::kable(build_fit_summary.table(dbm_EE_nl_fit$fit))
+```
+
+
+```{r}
+## TwinR
+formula <- "cbind(twin_total, singleton_total) ~ 1 + births_total + (1|pop)"
+dmm_orig_nl_fit <- fitPredictions(dmm_orig_nl, formula)
+
+knitr::kable(build_fit_summary.table(dmm_orig_nl_fit$fit))
+```
+
+
+```{r}
+## TwinR - birth level data
+formula <- "twin ~ 1 + poly(cbind(age, parity), 3) + (1|maternal_id) + (1|pop)"
+dbm_orig_nl_fit <- fitPredictions(data_births_monthly_not_last, formula, predict = F)
+
+knitr::kable(build_fit_summary.table(dbm_orig_nl_fit$fit))
+```
+
+## Plots 
+
+
+```{r}
+library(ggplot2)
+#some nice colors
+bc <- c("purple", "black", "navy", "darkgoldenrod2", "springgreen3", "gray")
+
+#use new base theme that displays also grid lines 
+source("./R/twinR_theme.R")
+```
+
+
+
+### Fig 1: Estonian vs TwinR Full Data
+
+
+```{r}
+fig2_EE_plot_data <- dmm_EE_fit$results
+fig2_orig_plot_data <- dmm_orig_fit$results
+```
+
+```{r}
+
+fig2_ext_orig <- ggplot() +  
+  geom_line(data=fig2_EE_plot_data,
+              aes(y = estimate,  x=births_total, color="EE all"),  size = 1) +
+    stat_summary(data=dmm_EE[dmm_EE$births_total <17, ],
+                 aes(x=births_total, y=prob_twin, color="EE all", fill = "EE all"),
+                 alpha=0.5,
+                 fun.data=mean_se) +
+    geom_ribbon(data=fig2_EE_plot_data,
+                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                    color="EE all", fill = "EE all"),
+                alpha = 0.3) + 
+    geom_line(data=fig2_orig_plot_data,
+             aes(y = estimate,  x=births_total, color="orig. rural"),  size = 1) +
+    stat_summary(data=dmm_orig[dmm_orig$births_total <19, ],
+                 aes(x=births_total, y=prob_twin,
+                     color="orig. rural", fill="orig. rural"),
+                 alpha=0.5,
+                 fun.data=mean_se) +
+    geom_ribbon(data=fig2_orig_plot_data,
+                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                    fill="orig. rural"),
+                alpha = 0.3) +
+    ggplot2::scale_x_continuous(breaks = 1:18) + 
+    ggplot2::scale_y_continuous(breaks = seq(0,0.03, by=0.005)) +
+    ggplot2::coord_cartesian() +
+    labs(subtitle = "Model prediction + data mean with SE",
+         y="Per-birth twin. prob.",
+         x="Maternal total births")
+p2 <- fig2_ext_orig + base_theme(larger=8) + scale_color_manual(values=bc) + 
+  scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "dataset")
+
+p2 
+```
+
+
+
+### Fig 2: Estonian vs Others No Last Birth
+
+```{r}
+fig2_EE_plot_data_nl <- dmm_EE_nl_fit$results
+fig2_EE_plot_data_nl$births_total <- fig2_EE_plot_data_nl$births_total + 1
+fig2_orig_plot_data_nl <- dmm_orig_nl_fit$results
+fig2_orig_plot_data_nl$births_total <- fig2_orig_plot_data_nl$births_total + 1
+```
+
+
+```{r}
+dmm_EE_nl_plot <- dmm_EE_nl
+dmm_orig_nl_plot <- dmm_orig_nl
+dmm_EE_nl_plot$births_total <- dmm_EE_nl_plot$births_total + 1
+dmm_orig_nl_plot$births_total <- dmm_orig_nl_plot$births_total + 1
+```
+
+
+```{r}
+fig2_ext_orig <- ggplot() +  
+  geom_line(data=fig2_EE_plot_data_nl,
+              aes(y = estimate,  x=births_total, color="EE all"),  size = 1) +
+    stat_summary(data=dmm_EE_nl_plot,
+                 aes(x=births_total, y=prob_twin, color="EE all", fill = "EE all"),
+                 alpha=0.5,
+                 fun.data=mean_se) +
+    geom_ribbon(data=fig2_EE_plot_data_nl,
+                aes(y = estimate, x=births_total, ymin = lwr, ymax = upr,
+                    color="EE all", fill = "EE all"),
+                alpha = 0.3) + 
+    geom_line(data=fig2_orig_plot_data_nl,
+             aes(y = estimate,  x=births_total, color="orig. rural"),  size = 1) +
+    stat_summary(data=dmm_orig_nl_plot,
+                 aes(x=births_total, y=prob_twin,
+                     color="orig. rural", fill="orig. rural"),
+                 alpha=0.5,
+                 fun.data=mean_se) +
+    geom_ribbon(data=fig2_orig_plot_data_nl,
+                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                    fill="orig. rural"),
+                alpha = 0.3) +
+    ggplot2::scale_x_continuous(breaks = 1:18, limits = c(1,NA)) + 
+    ggplot2::scale_y_continuous(breaks = seq(0,0.03, by=0.005)) +
+    ggplot2::coord_cartesian(ylim=c(0,0.03)) +
+    labs(subtitle = "Without last children, model prediction + data mean with SE",
+         y="Per-birth twin. prob.",
+         x="Maternal total births")
+p3 <- fig2_ext_orig + base_theme(larger=8) + scale_color_manual(values=bc) + 
+  scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "dataset")
+
+p3 
+```
+
+
+
+```{r}
+#END
+```
+

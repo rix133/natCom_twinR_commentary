@@ -1,0 +1,35 @@
+---
+title: "Test"
+author: "Richard Meitern"
+date: "`r Sys.Date()`"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This is an R Markdown test document. 
+
+```{r cars}
+knitr::kable(summary(cars))
+```
+
+## Including Plots
+```{r}
+library(ggplot2)
+```
+
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+ggplot(pressure, aes(x=temperature, y=pressure)) + geom_point()
+```
+
+```{r}
+#END
+```
+

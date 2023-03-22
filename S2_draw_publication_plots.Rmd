@@ -1,0 +1,163 @@
+---
+title: 'Suplementary Material 2: Drawing Publication Plots'
+author: "Richard Meitern"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+options(digits = 2)
+options(scipen = 9)
+options(knitr.kable.NA="")
+```
+
+## Introduction
+
+The aim of this document is to draw publication plots.
+
+```{r}
+#cleanup memory
+gcstuff <- gc(verbose=FALSE); rm(gcstuff);
+```
+
+
+```{r}
+#get last birth adding function
+source("./R/last_birth.R")
+
+#simplified twinR summary tables 
+source("./R/twinR_summary.R")
+
+#fix twinR compute predictions to do prediction with no lambda  as well
+source("./R/twinR_predictions.R")
+
+#simple convenience functions
+source("./R/utils.R")
+```
+
+
+
+## Data import 
+
+```{r}
+predDir <- ("./data/predictions/")
+dmm_EE_fit <- readRDS(paste0(predDir,"dmm_EEdata_fig.rds"))
+dmm_orig_fit <- readRDS(paste0(predDir,"dmm_origdata_fig.rds" ))
+dmm_EE_nl_fit <- readRDS(paste0(predDir,"dmm_EE_nldata_fig.rds"))
+dmm_orig_nl_fit <- readRDS(paste0(predDir,"dmm_orig_nldata_fig.rds"))
+```
+
+
+
+```{r}
+fig2_EE_plot_data <- dmm_EE_fit$results
+fig2_orig_plot_data <- dmm_orig_fit$results
+```
+
+```{r}
+fig2_EE_plot_data_nl <- dmm_EE_nl_fit$results
+fig2_EE_plot_data_nl$births_total <- fig2_EE_plot_data_nl$births_total + 1
+fig2_orig_plot_data_nl <- dmm_orig_nl_fit$results
+fig2_orig_plot_data_nl$births_total <- fig2_orig_plot_data_nl$births_total + 1
+```
+
+
+```{r}
+dmm_EE_nl_plot <- dmm_EE_nl
+dmm_orig_nl_plot <- dmm_orig_nl
+dmm_EE_nl_plot$births_total <- dmm_EE_nl_plot$births_total + 1
+dmm_orig_nl_plot$births_total <- dmm_orig_nl_plot$births_total + 1
+```
+
+## Plots 
+
+
+```{r}
+library(ggplot2)
+#some nice colors
+bc <- c("purple", "black", "navy", "darkgoldenrod2", "springgreen3", "gray")
+
+#use new base theme that displays also grid lines 
+source("./R/twinR_theme.R")
+```
+
+
+
+### Fig 1: Estonian vs TwinR Full Data
+
+
+```{r}
+
+fig2_ext_orig <- ggplot() +  
+  geom_line(data=fig2_EE_plot_data,
+              aes(y = estimate,  x=births_total, color="EE all"),  size = 1) +
+    geom_ribbon(data=fig2_EE_plot_data,
+                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                    color="EE all", fill = "EE all"),
+                alpha = 0.3) + 
+    geom_line(data=fig2_orig_plot_data,
+             aes(y = estimate,  x=births_total, color="orig. rural"),  size = 1) +
+    geom_ribbon(data=fig2_orig_plot_data,
+                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                    fill="orig. rural"),
+                alpha = 0.3) +
+    ggplot2::scale_x_continuous(breaks = 1:18) + 
+    ggplot2::scale_y_continuous(trans = "logit",
+                                breaks = seq(0.005, 0.025, by = 0.001)) +
+    ggplot2::coord_cartesian() +
+    labs(subtitle = "(A) With last chidren",
+         y="Per-birth twin. prob.",
+         x="Maternal total births")
+p2 <- fig2_ext_orig + base_theme(larger=8, legend_pos = c(0.7,0.9)) + scale_color_manual(values=bc) + 
+  scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "dataset")
+
+p2 
+```
+
+
+
+### Fig 2: Estonian vs Others No Last Birth
+
+
+
+```{r}
+fig2_ext_orig <- ggplot() +  
+  geom_line(data=fig2_EE_plot_data_nl,
+              aes(y = estimate,  x=births_total, color="EE all"),  size = 1) +
+    geom_ribbon(data=fig2_EE_plot_data_nl,
+                aes(y = estimate, x=births_total, ymin = lwr, ymax = upr,
+                    color="EE all", fill = "EE all"),
+                alpha = 0.3) + 
+    geom_line(data=fig2_orig_plot_data_nl,
+             aes(y = estimate,  x=births_total, color="orig. rural"),  size = 1) +
+    geom_ribbon(data=fig2_orig_plot_data_nl,
+                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                    fill="orig. rural"),
+                alpha = 0.3) +
+    ggplot2::scale_x_continuous(breaks = 1:18, limits = c(1,NA)) + 
+    ggplot2::scale_y_continuous(trans = "logit",
+                                breaks = seq(0.005, 0.025, by = 0.001)) +
+    labs(subtitle = "(B) Without last children",
+         y="Per-birth twin. prob.",
+         x="Maternal total births")
+p3 <- fig2_ext_orig + base_theme(larger=8, legend_pos = "none") + scale_color_manual(values=bc) + 
+  scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "dataset")
+
+p3 
+```
+```{r, fig.height=8, fig.width=6}
+p2_mod <- p2+theme(axis.text.x = element_blank(), axis.title.x = element_blank())
+p3_mod <- p3
+plot_1 <- gridExtra::grid.arrange(p2_mod, p3_mod, nrow=2)
+```
+
+
+
+
+```{r}
+#END
+```
+
