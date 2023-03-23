@@ -78,12 +78,11 @@ dmm_orig_nl_plot$births_total <- dmm_orig_nl_plot$births_total + 1
 ```{r}
 library(ggplot2)
 #some nice colors
-bc <- c("purple", "black", "navy", "darkgoldenrod2", "springgreen3", "gray")
+bc <- c( "azure3","purple4", "navy", "darkgoldenrod2", "springgreen3", "black")
 
 #use new base theme that displays also grid lines 
 source("./R/twinR_theme.R")
 ```
-
 
 
 ### Fig 1: Estonian vs TwinR Full Data
@@ -93,26 +92,26 @@ source("./R/twinR_theme.R")
 
 fig2_ext_orig <- ggplot() +  
   geom_line(data=fig2_EE_plot_data,
-              aes(y = estimate,  x=births_total, color="EE all"),  size = 1) +
+              aes(y = estimate,  x=births_total, color="Estonia"),  size = 1) +
     geom_ribbon(data=fig2_EE_plot_data,
                 aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    color="EE all", fill = "EE all"),
+                    color="Estonia", fill = "Estonia"),
                 alpha = 0.3) + 
     geom_line(data=fig2_orig_plot_data,
-             aes(y = estimate,  x=births_total, color="orig. rural"),  size = 1) +
+             aes(y = estimate,  x=births_total, color="8 European populations"),  size = 1) +
     geom_ribbon(data=fig2_orig_plot_data,
                 aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    fill="orig. rural"),
+                    fill="8 European populations"),
                 alpha = 0.3) +
     ggplot2::scale_x_continuous(breaks = 1:18) + 
     ggplot2::scale_y_continuous(trans = "logit",
                                 breaks = seq(0.005, 0.025, by = 0.001)) +
     ggplot2::coord_cartesian() +
-    labs(subtitle = "(A) With last chidren",
-         y="Per-birth twin. prob.",
+    labs(subtitle = "(A) Complete datasets",
+         y="Per-birth twinning probability",
          x="Maternal total births")
-p2 <- fig2_ext_orig + base_theme(larger=8, legend_pos = c(0.7,0.9)) + scale_color_manual(values=bc) + 
-  scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "dataset")
+p2 <- fig2_ext_orig + base_theme(larger=5, legend_pos = c(0.5,0.9)) + scale_color_manual(values=bc) + 
+   scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "")
 
 p2 
 ```
@@ -126,32 +125,39 @@ p2
 ```{r}
 fig2_ext_orig <- ggplot() +  
   geom_line(data=fig2_EE_plot_data_nl,
-              aes(y = estimate,  x=births_total, color="EE all"),  size = 1) +
+              aes(y = estimate,  x=births_total, color="Estonia"),  size = 1) +
     geom_ribbon(data=fig2_EE_plot_data_nl,
                 aes(y = estimate, x=births_total, ymin = lwr, ymax = upr,
-                    color="EE all", fill = "EE all"),
+                    color="Estonia", fill = "Estonia"),
                 alpha = 0.3) + 
     geom_line(data=fig2_orig_plot_data_nl,
-             aes(y = estimate,  x=births_total, color="orig. rural"),  size = 1) +
+             aes(y = estimate,  x=births_total, color="8 European populations"),  size = 1) +
     geom_ribbon(data=fig2_orig_plot_data_nl,
                 aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    fill="orig. rural"),
+                    fill="8 European populations"),
                 alpha = 0.3) +
     ggplot2::scale_x_continuous(breaks = 1:18, limits = c(1,NA)) + 
     ggplot2::scale_y_continuous(trans = "logit",
                                 breaks = seq(0.005, 0.025, by = 0.001)) +
-    labs(subtitle = "(B) Without last children",
-         y="Per-birth twin. prob.",
+    labs(subtitle = "(B) Without last births",
+         y="Per-birth twinning probability",
          x="Maternal total births")
-p3 <- fig2_ext_orig + base_theme(larger=8, legend_pos = "none") + scale_color_manual(values=bc) + 
-  scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "dataset")
+p3 <- fig2_ext_orig + base_theme(larger=5, legend_pos = "none") + scale_color_manual(values=bc) + 
+  scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "")
 
 p3 
 ```
-```{r, fig.height=8, fig.width=6}
-p2_mod <- p2+theme(axis.text.x = element_blank(), axis.title.x = element_blank())
-p3_mod <- p3
-plot_1 <- gridExtra::grid.arrange(p2_mod, p3_mod, nrow=2)
+```{r, fig.height=11.7, fig.width=8.3}
+p2_mod <- p2
+p3_mod <- p3 +theme( axis.title.y = element_blank())
+plot_1 <- gridExtra::grid.arrange(p2_mod, p3_mod, ncol=2, nrow=2)
+```
+```{r}
+#export A4 plot
+ggplot2::ggsave("./exports/figure_1_mother_level_data_twinnig_prob.pdf",
+                plot_1, height=11.7, width=8.3)
+ggplot2::ggsave("./exports/figure_1_mother_level_data_twinnig_prob.svg",
+                plot_1, height=11.7, width=8.3)
 ```
 
 
