@@ -24,7 +24,7 @@
 #' @return a list containing the predictions  and  intervals, as well as the 
 #' estimates from each bootstrap replicate used to compute 
 #' the intervals and the object created by [`boot.ci`][`boot::boot.ci`].
-#'
+#' @seealso \code{\link[twinR]{compute_predictions}}
 compute_predictions <- function (fit, newdata, random = TRUE, nb_boot = 1000L, seed = 123L) 
 {
   set.seed(seed)
