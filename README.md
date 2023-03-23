@@ -14,7 +14,7 @@ First, make sure the [twinR package](https://github.com/courtiol/twinR) and its 
 remotes::install_github("courtiol/twinR", dependencies = TRUE)
 ```
 
-Then, you can clone this repository and run the code from the Rmarkdown document "S1_replicate_stats_and_plots.Rmd" line by line using RStudio to reproduce the analyses. If you wish to convert this into R script to run from console you can e.g. use:
+Then, you can clone this repository and run the code from the Rmarkdown document "[S1_replicate_stats_and_plots.Rmd](https://github.com/rix133/natCom_twinR_commentary/blob/main/S1_replicate_stats_and_plots.Rmd)" line by line using RStudio to reproduce the analyses. If you wish to convert this into R script to run from console you can e.g. use:
 
 ```r
 knitr::purl("S1_replicate_stats_and_plots.Rmd", output="S1_replicate_stats_and_plots.R")
