@@ -44,10 +44,12 @@ source("./R/utils.R")
 
 ```{r}
 predDir <- ("./data/predictions/")
-dmm_EE_fit <- readRDS(paste0(predDir,"dmm_EEdata_fig.rds"))
-dmm_orig_fit <- readRDS(paste0(predDir,"dmm_origdata_fig.rds" ))
-dmm_EE_nl_fit <- readRDS(paste0(predDir,"dmm_EE_nldata_fig.rds"))
-dmm_orig_nl_fit <- readRDS(paste0(predDir,"dmm_orig_nldata_fig.rds"))
+eeForm <- "cbind(twin_total,singleton_total)~1+births_total" 
+origForm <- "cbind(twin_total,singleton_total)~1+births_total+(1_x_pop)"
+dmm_EE_fit <- readRDS(paste0(predDir, eeForm, "dmm_EEdata_fig.rds"))
+dmm_orig_fit <- readRDS(paste0(predDir, origForm, "dmm_origdata_fig.rds" ))
+dmm_EE_nl_fit <- readRDS(paste0(predDir, eeForm, "dmm_EE_nldata_fig.rds"))
+dmm_orig_nl_fit <- readRDS(paste0(predDir, origForm, "dmm_orig_nldata_fig.rds"))
 ```
 
 
@@ -64,13 +66,6 @@ fig2_orig_plot_data_nl <- dmm_orig_nl_fit$results
 fig2_orig_plot_data_nl$births_total <- fig2_orig_plot_data_nl$births_total + 1
 ```
 
-
-```{r}
-dmm_EE_nl_plot <- dmm_EE_nl
-dmm_orig_nl_plot <- dmm_orig_nl
-dmm_EE_nl_plot$births_total <- dmm_EE_nl_plot$births_total + 1
-dmm_orig_nl_plot$births_total <- dmm_orig_nl_plot$births_total + 1
-```
 
 ## Plots 
 
@@ -92,26 +87,26 @@ source("./R/twinR_theme.R")
 
 fig2_ext_orig <- ggplot() +  
   geom_line(data=fig2_EE_plot_data,
-              aes(y = estimate,  x=births_total, color="Estonia"),  size = 1) +
-    geom_ribbon(data=fig2_EE_plot_data,
-                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    color="Estonia", fill = "Estonia"),
-                alpha = 0.3) + 
-    geom_line(data=fig2_orig_plot_data,
-             aes(y = estimate,  x=births_total, color="8 European populations"),  size = 1) +
-    geom_ribbon(data=fig2_orig_plot_data,
-                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    fill="8 European populations"),
-                alpha = 0.3) +
-    ggplot2::scale_x_continuous(breaks = 1:18) + 
-    ggplot2::scale_y_continuous(trans = "logit",
-                                breaks = seq(0.005, 0.025, by = 0.001)) +
-    ggplot2::coord_cartesian() +
-    labs(subtitle = "(A) Complete datasets",
-         y="Per-birth twinning probability",
-         x="Maternal total births")
+            aes(y = estimate,  x=births_total, color="Estonia"),  size = 1) +
+  geom_ribbon(data=fig2_EE_plot_data,
+              aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                  color="Estonia", fill = "Estonia"),
+              alpha = 0.3) + 
+  geom_line(data=fig2_orig_plot_data,
+            aes(y = estimate,  x=births_total, color="9 W-European populations"),  size = 1) +
+  geom_ribbon(data=fig2_orig_plot_data,
+              aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                  fill="9 W-European populations"),
+              alpha = 0.3) +
+  ggplot2::scale_x_continuous(breaks = 1:18) + 
+  ggplot2::scale_y_continuous(trans = "logit",
+                              breaks = seq(0.005, 0.025, by = 0.001)) +
+  ggplot2::coord_cartesian() +
+  labs(subtitle = "(A) Complete datasets",
+       y="Per-birth twinning probability",
+       x="Maternal total births")
 p2 <- fig2_ext_orig + base_theme(larger=5, legend_pos = c(0.5,0.9)) + scale_color_manual(values=bc) + 
-   scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "")
+  scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "")
 
 p2 
 ```
@@ -125,23 +120,23 @@ p2
 ```{r}
 fig2_ext_orig <- ggplot() +  
   geom_line(data=fig2_EE_plot_data_nl,
-              aes(y = estimate,  x=births_total, color="Estonia"),  size = 1) +
-    geom_ribbon(data=fig2_EE_plot_data_nl,
-                aes(y = estimate, x=births_total, ymin = lwr, ymax = upr,
-                    color="Estonia", fill = "Estonia"),
-                alpha = 0.3) + 
-    geom_line(data=fig2_orig_plot_data_nl,
-             aes(y = estimate,  x=births_total, color="8 European populations"),  size = 1) +
-    geom_ribbon(data=fig2_orig_plot_data_nl,
-                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    fill="8 European populations"),
-                alpha = 0.3) +
-    ggplot2::scale_x_continuous(breaks = 1:18, limits = c(1,NA)) + 
-    ggplot2::scale_y_continuous(trans = "logit",
-                                breaks = seq(0.005, 0.025, by = 0.001)) +
-    labs(subtitle = "(B) Without last births",
-         y="Per-birth twinning probability",
-         x="Maternal total births")
+            aes(y = estimate,  x=births_total, color="Estonia"),  size = 1) +
+  geom_ribbon(data=fig2_EE_plot_data_nl,
+              aes(y = estimate, x=births_total, ymin = lwr, ymax = upr,
+                  color="Estonia", fill = "Estonia"),
+              alpha = 0.3) + 
+  geom_line(data=fig2_orig_plot_data_nl,
+            aes(y = estimate,  x=births_total, color="9 W-European populations"),  size = 1) +
+  geom_ribbon(data=fig2_orig_plot_data_nl,
+              aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                  fill="9 W-European populations"),
+              alpha = 0.3) +
+  ggplot2::scale_x_continuous(breaks = 1:18, limits = c(1,NA)) + 
+  ggplot2::scale_y_continuous(trans = "logit",
+                              breaks = seq(0.005, 0.025, by = 0.001)) +
+  labs(subtitle = "(B) Without last births",
+       y="Per-birth twinning probability",
+       x="Maternal total births")
 p3 <- fig2_ext_orig + base_theme(larger=5, legend_pos = "none") + scale_color_manual(values=bc) + 
   scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "")
 

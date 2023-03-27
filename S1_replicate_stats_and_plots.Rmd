@@ -85,7 +85,7 @@ dmm_EE_nl$prob_twin <- dmm_EE_nl$twin_total / dmm_EE_nl$births_total
 
 
 
-## Data Import 8 European Populations
+## Data Import 9 Western European Populations
 
 ```{r}
 ##Import and pre-proccess twinR package data
@@ -123,7 +123,7 @@ all_tbls <- rbind(build_data_summary.table(data_births_monthly),
 
 ```{r}
 all_tbls$Dataset  <- rep(c("All births", "Without last birth"),2)
-all_tbls$Populations  <- rep(c("8 European", "Estonia"),each=2)
+all_tbls$Populations  <- rep(c("9 Western European", "Estonia"),each=2)
 all_tbls <- as.data.frame(all_tbls)
 row.names(all_tbls) <- paste0(all_tbls$Populations, " populations ",
                               tolower(all_tbls$Dataset)) 
@@ -254,15 +254,15 @@ fig2_ext_orig <- ggplot() +
                     color="Estonia", fill = "Estonia"),
                 alpha = 0.3) + 
     geom_line(data=fig2_orig_plot_data,
-             aes(y = estimate,  x=births_total, color="8 European"),  size = 1) +
+             aes(y = estimate,  x=births_total, color="9 W-European"),  size = 1) +
     stat_summary(data=dmm_orig[dmm_orig$births_total <19, ],
                  aes(x=births_total, y=prob_twin,
-                     color="8 European", fill="8 European"),
+                     color="9 W-European", fill="9 W-European"),
                  alpha=0.5,
                  fun.data=mean_se) +
     geom_ribbon(data=fig2_orig_plot_data,
                 aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    fill="8 European"),
+                    fill="9 W-European"),
                 alpha = 0.3) +
     ggplot2::scale_x_continuous(breaks = 1:18) + 
     ggplot2::scale_y_continuous(breaks = seq(0,0.03, by=0.005)) +
@@ -309,15 +309,15 @@ fig2_ext_orig <- ggplot() +
                     color="Estonia", fill = "Estonia"),
                 alpha = 0.3) + 
     geom_line(data=fig2_orig_plot_data_nl,
-             aes(y = estimate,  x=births_total, color="8 European"),  size = 1) +
+             aes(y = estimate,  x=births_total, color="9 W-European"),  size = 1) +
     stat_summary(data=dmm_orig_nl_plot,
                  aes(x=births_total, y=prob_twin,
-                     color="8 European", fill="8 European"),
+                     color="9 W-European", fill="9 W-European"),
                  alpha=0.5,
                  fun.data=mean_se) +
     geom_ribbon(data=fig2_orig_plot_data_nl,
                 aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    fill="8 European"),
+                    fill="9 W-European"),
                 alpha = 0.3) +
     ggplot2::scale_x_continuous(breaks = 1:18, limits = c(1,NA)) + 
     ggplot2::scale_y_continuous(breaks = seq(0,0.03, by=0.005)) +
@@ -361,13 +361,13 @@ fig4C_orig_nl_plot_data$parity <- fig4C_orig_nl_plot_data$parity + 1
 rescale_cd <- scale_y_continuous(limits = c(NA, 0.035)) 
 
 fig2a <- draw_fig_4C(fig4C_orig_plot_data) + 
-  labs(subtitle = "(A) 8 European pop., all births") 
+  labs(subtitle = "(A) 9 W-European pop., all births") 
 
 fig2b <- draw_fig_4C(fig4C_EE_plot_data) + 
   labs(subtitle = "(B) Estonia, all births") 
 
 fig2c <- draw_fig_4C(fig4C_orig_nl_plot_data, y_lims = c(0.01, 0.035)) + 
-  labs(subtitle = "(C) 8 European pop., without last birth") 
+  labs(subtitle = "(C) 9 W-European pop., without last birth") 
   
 fig2d <- draw_fig_4C(fig4C_EE_nl_plot_data,y_lims = c(0.01, 0.035)) + 
   labs(subtitle = "(D) Estonia, without last birth") 
