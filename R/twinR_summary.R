@@ -10,7 +10,7 @@
 #' @examples
 #' #See ?twinR
 #' @seealso code{\link[twinR]{build_fit_summary.table}}
-build_fit_summary.table <- function(fit) {
+build_fit_summary.table <- function(fit, signif_digits=3) {
 
   ## extract raw model output:
   utils::capture.output(fit_components <- spaMM::summary.HLfit(fit))
@@ -85,7 +85,18 @@ build_fit_summary.table <- function(fit) {
 
   ## add formula as an atribute of the tibble:
   attr(all_results, "formula") <- model_formula
-
+  #format to signficant digits
+  all_results <- apply(all_results, 2, function(col, s){
+    numcol <- suppressWarnings(as.numeric(col))
+    if(all(is.na(numcol))){return(col)}
+    sapply(numcol, function(x,s){
+      maxval <- 10*s - 1
+      if(is.na(x)){return(x)}
+      if(abs(x)<maxval){return(signif(x, s))}
+      else{round(x)}
+    }, s)
+  }, signif_digits)
+  
   all_results
 }
 
