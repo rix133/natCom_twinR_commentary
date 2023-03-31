@@ -102,7 +102,7 @@ fig2_ext_orig <- ggplot() +
   ggplot2::scale_y_continuous(trans = "logit",
                               breaks = seq(0.005, 0.025, by = 0.001)) +
   ggplot2::coord_cartesian() +
-  labs(subtitle = "(A) Complete datasets",
+  labs(subtitle = "(a) Complete datasets",
        y="Per-birth twinning probability",
        x="Maternal total births")
 p2 <- fig2_ext_orig + base_theme(larger=5, legend_pos = c(0.5,0.9)) + scale_color_manual(values=bc) + 
@@ -134,7 +134,7 @@ fig2_ext_orig <- ggplot() +
   ggplot2::scale_x_continuous(breaks = 1:18, limits = c(1,NA)) + 
   ggplot2::scale_y_continuous(trans = "logit",
                               breaks = seq(0.005, 0.025, by = 0.001)) +
-  labs(subtitle = "(B) Without last births",
+  labs(subtitle = "(b) Without last births",
        y="Per-birth twinning probability",
        x="Maternal total births")
 p3 <- fig2_ext_orig + base_theme(larger=5, legend_pos = "none") + scale_color_manual(values=bc) + 
