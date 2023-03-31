@@ -85,7 +85,7 @@ dmm_EE_nl$prob_twin <- dmm_EE_nl$twin_total / dmm_EE_nl$births_total
 
 
 
-## Data Import 9 Western European Populations
+## Data Import 9 Other European Populations
 
 ```{r}
 ##Import and pre-proccess twinR package data
@@ -120,10 +120,15 @@ all_tbls <- rbind(build_data_summary.table(data_births_monthly),
                   build_data_summary.table(data_births_monthly_EE_not_last))
 ```
 
+```{r}
+#some labels
+estLab <- "Estonian"
+westLab <- "9 other European"
+```
 
 ```{r}
 all_tbls$Dataset  <- rep(c("All births", "Without last birth"),2)
-all_tbls$Populations  <- rep(c("9 Western European", "Estonia"),each=2)
+all_tbls$Populations  <- rep(c(westLab, estLab),each=2)
 all_tbls <- as.data.frame(all_tbls)
 row.names(all_tbls) <- paste0(all_tbls$Populations, " populations ",
                               tolower(all_tbls$Dataset)) 
@@ -232,7 +237,7 @@ source("./R/twinR_theme.R")
 
 
 
-### Fig 1A: Estonian vs TwinR Full Data
+### Fig 1a: Estonian vs TwinR Full Data
 
 ```{r}
 
@@ -242,35 +247,36 @@ fig2_orig_plot_data <- dmm_orig_fit$results
 
 ```{r, fig.height=11.7/2, fig.width=8.3}
 infoTxt <- "model prediction with 95% CI and data mean SE"
+
 fig2_ext_orig <- ggplot() +  
   geom_line(data=fig2_EE_plot_data,
-              aes(y = estimate,  x=births_total, color="Estonia"),  size = 1) +
+              aes(y = estimate,  x=births_total, color=estLab),  size = 1) +
     stat_summary(data=dmm_EE[dmm_EE$births_total <17, ],
-                 aes(x=births_total, y=prob_twin, color="Estonia", fill = "Estonia"),
+                 aes(x=births_total, y=prob_twin, color=estLab, fill = estLab),
                  alpha=1,
                  position = position_nudge(x = -0.1),
                  fun.data=mean_se) +
     geom_ribbon(data=fig2_EE_plot_data,
                 aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    color="Estonia", fill = "Estonia"),
+                    color=estLab, fill = estLab),
                 alpha = 0.3) + 
     geom_line(data=fig2_orig_plot_data,
-             aes(y = estimate,  x=births_total, color="9 W-European"),  size = 1) +
+             aes(y = estimate,  x=births_total, color=westLab),  size = 1) +
     stat_summary(data=dmm_orig[dmm_orig$births_total <19, ],
                  aes(x=births_total, y=prob_twin,
-                     color="9 W-European", fill="9 W-European"),
+                     color=westLab, fill=westLab),
                  alpha=1,
                  shape = 1,
                  position = position_nudge(x = 0.1),
                  fun.data=mean_se) +
     geom_ribbon(data=fig2_orig_plot_data,
                 aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    fill="9 W-European"),
+                    fill=westLab),
                 alpha = 0.1) +
     ggplot2::scale_x_continuous(breaks = 1:18) + 
     ggplot2::scale_y_continuous(breaks = seq(0,0.03, by=0.005)) +
     ggplot2::coord_cartesian() +
-    labs(subtitle = paste0("(A) All births, ", infoTxt),
+    labs(subtitle = paste0("(a) All births, ", infoTxt),
          y="Per-birth twin. prob.",
          x="Maternal total births")
 p2 <- fig2_ext_orig + base_theme(larger=8) + scale_color_manual(values=bc) + 
@@ -280,7 +286,7 @@ p2
 ```
 
 
-### Fig 1B: Estonian vs Others No Last Birth
+### Fig 1b: Estonian vs Others No Last Birth
 
 
 ```{r}
@@ -302,33 +308,33 @@ dmm_orig_nl_plot$births_total <- dmm_orig_nl_plot$births_total + 1
 ```{r, fig.height=11.7/2, fig.width=8.3}
 fig2_ext_orig <- ggplot() +  
   geom_line(data=fig2_EE_plot_data_nl,
-              aes(y = estimate,  x=births_total, color="Estonia"),  size = 1) +
+              aes(y = estimate,  x=births_total, color=estLab),  size = 1) +
     stat_summary(data=dmm_EE_nl_plot,
-                 aes(x=births_total, y=prob_twin, color="Estonia", fill = "Estonia"),
+                 aes(x=births_total, y=prob_twin, color=estLab, fill = estLab),
                  alpha=1,
                  fun.data=mean_se,
                  position = position_nudge(x = -0.1)) +
     geom_ribbon(data=fig2_EE_plot_data_nl,
                 aes(y = estimate, x=births_total, ymin = lwr, ymax = upr,
-                    color="Estonia", fill = "Estonia"),
+                    color=estLab, fill = estLab),
                 alpha = 0.3) + 
     geom_line(data=fig2_orig_plot_data_nl,
-             aes(y = estimate,  x=births_total, color="9 W-European"),  size = 1) +
+             aes(y = estimate,  x=births_total, color=westLab),  size = 1) +
     stat_summary(data=dmm_orig_nl_plot,
                  aes(x=births_total, y=prob_twin,
-                     color="9 W-European", fill="9 W-European"),
+                     color=westLab, fill=westLab),
                  alpha=1,
                  shape = 1,
                  fun.data=mean_se,
                  position = position_nudge(x = 0.1)) +
     geom_ribbon(data=fig2_orig_plot_data_nl,
                 aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
-                    fill="9 W-European"),
+                    fill=westLab),
                 alpha = 0.1) +
     ggplot2::scale_x_continuous(breaks = 1:18, limits = c(1,NA)) + 
     ggplot2::scale_y_continuous(breaks = seq(0,0.03, by=0.005)) +
     ggplot2::coord_cartesian(ylim=c(0,0.03)) +
-    labs(subtitle = paste0("(B) Without last birth, ", infoTxt),
+    labs(subtitle = paste0("(b) Without last birth, ", infoTxt),
          y="Per-birth twin. prob.",
          x="Maternal total births")
 p3 <- fig2_ext_orig + base_theme(larger=8) + scale_color_manual(values=bc) + 
@@ -368,17 +374,17 @@ fig4C_orig_nl_plot_data$parity <- fig4C_orig_nl_plot_data$parity + 1
 
 rescale_cd <- scale_y_continuous(limits = c(NA, 0.035)) 
 
-fig2a <- draw_fig_4C(fig4C_orig_plot_data) + 
-  labs(subtitle = "(A) 9 W-European pop., all births") 
+fig2b <- draw_fig_4C(fig4C_orig_plot_data) + 
+  labs(subtitle = paste0("(b) ",westLab,", all births"))
 
-fig2b <- draw_fig_4C(fig4C_EE_plot_data) + 
-  labs(subtitle = "(B) Estonia, all births") 
+fig2a <- draw_fig_4C(fig4C_EE_plot_data) + 
+  labs(subtitle = paste0("(a) ",estLab,", all births"))
 
-fig2c <- draw_fig_4C(fig4C_orig_nl_plot_data, y_lims = c(0.01, 0.035)) + 
-  labs(subtitle = "(C) 9 W-European pop., without last birth") 
+fig2d <- draw_fig_4C(fig4C_orig_nl_plot_data, y_lims = c(0.01, 0.035)) +
+  labs(subtitle = paste0("(d) ",westLab,",  w/o last b."))
   
-fig2d <- draw_fig_4C(fig4C_EE_nl_plot_data,y_lims = c(0.01, 0.035)) + 
-  labs(subtitle = "(D) Estonia, without last birth") 
+fig2c <- draw_fig_4C(fig4C_EE_nl_plot_data,y_lims = c(0.01, 0.035)) + 
+  labs(subtitle = paste0("(c) ",estLab,",  without last birth"))
 
 
 
