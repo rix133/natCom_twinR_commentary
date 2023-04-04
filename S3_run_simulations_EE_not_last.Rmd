@@ -168,11 +168,15 @@ cat("Fits are saved in: ", fitDir)
 ```{r fit models}
 ## fit all trios of models in parallel (for linux only, but easy to adjust for other OS):
 pbmcapply::pbmclapply(scenarios_to_do, function(scenario) {
-  fits <- fit_life_histories(scenario = scenario,
+  targetFname <-  paste0(fitDir,"/fits_", scenario, "_obs.rda")
+  if(!file.exists(targetFname)){
+    fits <- fit_life_histories(scenario = scenario,
                              birth_level_data = data_births_monthly)
-  save(fits, file = paste0(fitDir,"/fits_", scenario, "_obs.rda"), compress = "xz")
-
-  rm(fits)
+    save(fits, file =targetFname, compress = "xz")
+  
+    rm(fits)
+  }
+  
   }, mc.cores = min(c(length(scenarios_to_do), nb_cores)), mc.preschedule = FALSE)
 ```
 
@@ -181,23 +185,27 @@ pbmcapply::pbmclapply(scenarios_to_do, function(scenario) {
 for (scenario in scenarios_to_do) {
 
    load(file = paste0(fitDir,"/fits_", scenario, "_obs.rda"))
-
-   slopes_under_scenario <- simulate_slopes_for_GOF(N_replicates_level1 = 200L,
-                                                    N_replicates_level2 = 49L,
-                                                    birth_level_data = data_births_monthly,
-                                                    life_history_fits = fits,
-                                                    scenario = scenario,
-                                                    nb_cores = nb_cores,
-                                                    timeout = timeout,
-                                                    .log = TRUE, lapply_pkg = "pbmcapply",
-                                                    verbose = list(fit = TRUE, simu = FALSE))
-   rm(fits)
+  
    name_obj <- paste0("slopes_under_", scenario)
-   assign(name_obj, value = slopes_under_scenario)
-   save(list = name_obj, file = paste0(slopeDir,"/", name_obj, ".rda"))
-   rm(list = name_obj) # remove the object behind the name!
-   rm(slopes_under_scenario, scenario, name_obj) # remove the object directly
-   gc_stuff <- gc(verbose = FALSE)
+   targetFname <- paste0(slopeDir,"/", name_obj, ".rda")
+   if(!file.exists(targetFname)){
+     slopes_under_scenario <- simulate_slopes_for_GOF(N_replicates_level1 = 200L,
+                                                      N_replicates_level2 = 49L,
+                                                     birth_level_data = data_births_monthly,
+                                                      life_history_fits = fits,
+                                                      scenario = scenario,
+                                                      nb_cores = nb_cores,
+                                                      timeout = timeout,
+                                                      .log = TRUE, lapply_pkg = "pbmcapply",
+                                                      verbose = list(fit = TRUE, simu = FALSE))
+     rm(fits)
+     assign(name_obj, value = slopes_under_scenario)
+     save(list = name_obj, file = targetFname)
+     rm(list = name_obj) # remove the object behind the name!
+     rm(slopes_under_scenario, scenario, name_obj) # remove the object directly
+     gc_stuff <- gc(verbose = FALSE)
+   }
+   
 }
 ```
 
