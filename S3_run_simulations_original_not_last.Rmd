@@ -36,6 +36,11 @@ The scenario 0 does not include any of these mechanisms. This documents needs th
 ```{r}
 #cleanup memory
 gcstuff <- gc(verbose=FALSE); rm(gcstuff);
+
+```
+
+```{r}
+cat("The current directory is: ", getwd())
 ```
 
 
@@ -147,16 +152,21 @@ scenarios_to_do <- c("base_model", "P", "I", "S", "H",
 
 ### TwinR data
 
-```{r}
+```{r make directories}
 expName <- "_orig_nl"
 slopeDir <- paste0(baseSlopeDir, expName)
 fitDir <- paste0(baseFitDir, expName)
 
-dir.create(slopeDir)
-dir.create(fitDir)
+dir.create(slopeDir, recursive = T)
+dir.create(fitDir, recursive = T)
 
 data_births_monthly <- data_births_monthly_not_last
 
+cat("Fits are saved in: ", fitDir)
+```
+
+
+```{r fit models}
 ## fit all trios of models in parallel (for linux only, but easy to adjust for other OS):
 pbmcapply::pbmclapply(scenarios_to_do, function(scenario) {
   fits <- fit_life_histories(scenario = scenario,
@@ -165,9 +175,10 @@ pbmcapply::pbmclapply(scenarios_to_do, function(scenario) {
 
   rm(fits)
   }, mc.cores = min(c(length(scenarios_to_do), nb_cores)), mc.preschedule = FALSE)
+```
 
 
-
+```{r run scenarios}
 for (scenario in scenarios_to_do) {
 
    load(file = paste0(fitDir,"/fits_", scenario, "_obs.rda"))
@@ -184,14 +195,15 @@ for (scenario in scenarios_to_do) {
    rm(fits)
    name_obj <- paste0("slopes_under_", scenario)
    assign(name_obj, value = slopes_under_scenario)
-   save(list = name_obj, file = paste0(slopeDir, name_obj, ".rda"))
+   save(list = name_obj, file = paste0(slopeDir,"/", name_obj, ".rda"))
    rm(list = name_obj) # remove the object behind the name!
    rm(slopes_under_scenario, scenario, name_obj) # remove the object directly
    gc_stuff <- gc(verbose = FALSE)
 }
+```
 
 
-
+```{r draw figure}
 ## Combine simulated slopes:
 
 all_slopes <- combine_simulated_slopes(path_slopes = slopeDir)
@@ -201,17 +213,23 @@ all_slopes <- combine_simulated_slopes(path_slopes = slopeDir)
 
 fig5 <- draw_fig_5(all_slopes, width = 1)
 fig5Fname <- paste0("./exports/fig5_", expName, ".")
-ggplot2::ggsave(file = paste0(fig5Fname, "pdf"), width = 88, height = 70, units = "mm")
-ggplot2::ggsave(file = paste0(fig5Fname, "png"), width = 88, height = 70, units = "mm")
+ggplot2::ggsave(filename = paste0(fig5Fname, "pdf"), fig5,
+                width = 88, height = 70, units = "mm")
+fig5
+```
 
 
+```{r draw figures}
 ## test scenarios (table S13):
 
 tableS13 <- goodness_of_fit(all_slopes)
 
-write.csv(tableS13, file = paste0(fig5Fname, "csv"))
+writexl::write_xlsx(tableS13, paste0(fig5Fname, "xlsx"))
+knitr::kable(tableS13)
+```
 
 
+```{r timing}
 ## computing time (for gof analysis):
 
 computing_time_analysis(all_slopes)
@@ -219,78 +237,6 @@ computing_time_analysis(all_slopes)
 ```
 
 
-### Estonain Data
-
-```{r}
-expName <- "_EE_nl"
-slopeDir <- paste0(baseSlopeDir, expName)
-fitDir <- paste0(baseFitDir, expName)
-
-dir.create(slopeDir)
-dir.create(fitDir)
-
-data_births_monthly <- data_births_monthly_EE_not_last
-
-## fit all trios of models in parallel (for linux only, but easy to adjust for other OS):
-pbmcapply::pbmclapply(scenarios_to_do, function(scenario) {
-  fits <- fit_life_histories(scenario = scenario,
-                             birth_level_data = data_births_monthly)
-  save(fits, file = paste0(fitDir,"/fits_", scenario, "_obs.rda"), compress = "xz")
-
-  rm(fits)
-  }, mc.cores = min(c(length(scenarios_to_do), nb_cores)), mc.preschedule = FALSE)
-
-
-
-for (scenario in scenarios_to_do) {
-
-   load(file = paste0(fitDir,"/fits_", scenario, "_obs.rda"))
-
-   slopes_under_scenario <- simulate_slopes_for_GOF(N_replicates_level1 = 200L,
-                                                    N_replicates_level2 = 49L,
-                                                    birth_level_data = data_births_monthly,
-                                                    life_history_fits = fits,
-                                                    scenario = scenario,
-                                                    nb_cores = nb_cores,
-                                                    timeout = timeout,
-                                                    .log = TRUE, lapply_pkg = "pbmcapply",
-                                                    verbose = list(fit = TRUE, simu = FALSE))
-   rm(fits)
-   name_obj <- paste0("slopes_under_", scenario)
-   assign(name_obj, value = slopes_under_scenario)
-   save(list = name_obj, file = paste0(slopeDir, name_obj, ".rda"))
-   rm(list = name_obj) # remove the object behind the name!
-   rm(slopes_under_scenario, scenario, name_obj) # remove the object directly
-   gc_stuff <- gc(verbose = FALSE)
-}
-
-
-
-## Combine simulated slopes:
-
-all_slopes <- combine_simulated_slopes(path_slopes = slopeDir)
-
-
-## Figure 5:
-
-fig5 <- draw_fig_5(all_slopes, width = 1)
-fig5Fname <- paste0("./exports/fig5_", expName, ".")
-ggplot2::ggsave(file = paste0(fig5Fname, "pdf"), width = 88, height = 70, units = "mm")
-ggplot2::ggsave(file = paste0(fig5Fname, "png"), width = 88, height = 70, units = "mm")
-
-
-## test scenarios (table S13):
-
-tableS13 <- goodness_of_fit(all_slopes)
-
-write.csv(tableS13, file = paste0(fig5Fname, "csv"))
-
-
-## computing time (for gof analysis):
-
-computing_time_analysis(all_slopes)
-
-```
 
 
 

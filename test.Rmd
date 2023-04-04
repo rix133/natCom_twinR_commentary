@@ -14,19 +14,20 @@ knitr::opts_chunk$set(echo = TRUE)
 This is an R Markdown test document. 
 
 ```{r cars}
+testDir <- "./exports/test/"
 knitr::kable(summary(cars))
+dir.create(testDir, recursive = T)
+writexl::write_xlsx(cars, "./exports/test/test_cars.xlsx")
 ```
 
 ## Including Plots
-```{r}
-library(ggplot2)
-```
+
 
 
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
-ggplot(pressure, aes(x=temperature, y=pressure)) + geom_point()
+ggplot2::ggplot(pressure, ggplot2::aes(x=temperature, y=pressure)) + ggplot2::geom_point()
 ```
 
 ```{r}
