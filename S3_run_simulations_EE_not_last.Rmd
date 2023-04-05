@@ -58,12 +58,21 @@ source("./R/twinR_predictions.R")
 source("./R/utils.R")
 ```
 
+The memory (RAM) and usage is quite high for simulations. Below there are some information about the RAM  usages per  CPU of simulations on Estonian data w/o last birth. The total number of CPUs used for running these simulations was 61.
+
+Memory usage per CPU: 
+
+  * base model: about 15GB (dumped cores have a size range 12-23GB)
+
 
 ```{r}
 ## Identify number of CPU cores available for parallel computing,
 ## note: using a large number may lead RAM to max out, so you may have to adjust
 ## that according to your infrastructure:
-nb_cores <- min(c(20L, parallel::detectCores() - 1))
+nb_cores <- min(c(200L, parallel::detectCores() - 1))
+
+#it seems that simulating the base model for Estonian not last birth data
+#requires about 15GB of RAM per CPU core (tested with 61 CPU cores)
 
 ## Set option in spaMM:
 spaMM::spaMM.options(nb_cores = nb_cores)
@@ -133,7 +142,9 @@ input data frames are changed.
 
 library(twinR)
 library(doSNOW)
-nb_cores <- min(c(20L, parallel::detectCores() - 1)) ## only 20 since large memory footprint
+#it seems that simulating the base model for Estonian not last birth data
+#requires about 15GB of RAM per CPU core (tested with 61 CPU cores)
+
 timeout <- 24 * 60 * 60 # a Day 
 
 baseSlopeDir <- "./exports/slopes_under_scenarios"
@@ -190,7 +201,7 @@ for (scenario in scenarios_to_do) {
    targetFname <- paste0(slopeDir,"/", name_obj, ".rda")
    if(!file.exists(targetFname)){
      slopes_under_scenario <- simulate_slopes_for_GOF(N_replicates_level1 = 200L,
-                                                      N_replicates_level2 = 49L,
+                                                      N_replicates_level2 = 20L,
                                                      birth_level_data = data_births_monthly,
                                                       life_history_fits = fits,
                                                       scenario = scenario,
