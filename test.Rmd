@@ -28,7 +28,10 @@ writexl::write_xlsx(cars, "./exports/test/test_cars.xlsx")
 ## Including Plots
 
 ```{r}
+sink(stderr(), type = "message")
 message('for writing diagnostic info to standard error')
+sink(NULL, type = "message")
+
 ```
 
 
