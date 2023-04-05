@@ -99,20 +99,6 @@ data_births_monthly_EE_not_last <- data_births_monthly_EE[!data_births_monthly_E
 
 
 
-## Data Import 9 Other European Populations
-
-```{r}
-##Import and pre-proccess twinR package data
-
-## Filter the raw data to only keep data with monthly resolution:
-data_births_monthly <- twinR::filter_data(twinR::data_births_all) 
-
-
-data_births_monthly <- add_last_birth(data_births_monthly)
-data_births_monthly_not_last <- data_births_monthly[!data_births_monthly$last,]
-
-```
-
 
 ## Running Simulations
 
@@ -171,6 +157,9 @@ dir.create(slopeDir, recursive = T)
 dir.create(fitDir, recursive = T)
 
 data_births_monthly <- data_births_monthly_EE_not_last
+
+#remove unnecessary data frames
+rm(data_births_monthly_EE, data_births_monthly_EE_not_last)
 
 cat("Fits are saved in: ", fitDir)
 ```
