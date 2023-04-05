@@ -69,10 +69,11 @@ Memory usage per CPU:
 ## Identify number of CPU cores available for parallel computing,
 ## note: using a large number may lead RAM to max out, so you may have to adjust
 ## that according to your infrastructure:
-nb_cores <- min(c(200L, parallel::detectCores() - 1))
+nb_cores <- 50
 
 #it seems that simulating the base model for Estonian not last birth data
 #requires about 15GB of RAM per CPU core (tested with 61 CPU cores)
+
 
 ## Set option in spaMM:
 spaMM::spaMM.options(nb_cores = nb_cores)
@@ -131,7 +132,7 @@ library(doSNOW)
 #it seems that simulating the base model for Estonian not last birth data
 #requires about 15GB of RAM per CPU core (tested with 61 CPU cores)
 
-timeout <- 24 * 60 * 60 # a Day 
+timeout <- 1 * 60 * 60 # an Hour
 
 baseSlopeDir <- "./exports/slopes_under_scenarios"
 baseFitDir <- "./exports/fitted_models"
