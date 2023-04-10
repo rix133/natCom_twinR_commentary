@@ -167,18 +167,22 @@ cat("Fits are saved in: ", fitDir)
 
 
 ```{r fit models}
-## fit all trios of models in parallel (for linux only, but easy to adjust for other OS):
-pbmcapply::pbmclapply(scenarios_to_do, function(scenario) {
-  targetFname <-  paste0(fitDir,"/fits_", scenario, "_obs.rda")
-  if(!file.exists(targetFname)){
-    fits <- fit_life_histories(scenario = scenario,
-                             birth_level_data = data_births_monthly)
-    save(fits, file =targetFname, compress = "xz")
-  
-    rm(fits)
-  }
-  
-  }, mc.cores = min(c(length(scenarios_to_do), nb_cores)), mc.preschedule = FALSE)
+fit_models  <- FALSE
+if(fit_models){
+  ## fit all trios of models in parallel (for linux only, but easy to adjust for other OS):
+  pbmcapply::pbmclapply(scenarios_to_do, function(scenario) {
+    targetFname <-  paste0(fitDir,"/fits_", scenario, "_obs.rda")
+    if(!file.exists(targetFname)){
+      fits <- fit_life_histories(scenario = scenario,
+                               birth_level_data = data_births_monthly)
+      save(fits, file =targetFname, compress = "xz")
+    
+      rm(fits)
+    }
+    
+    }, mc.cores = min(c(length(scenarios_to_do), nb_cores)), mc.preschedule = FALSE)
+}
+
 ```
 
 
