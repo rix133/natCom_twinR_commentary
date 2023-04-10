@@ -58,7 +58,7 @@ source("./R/twinR_predictions.R")
 source("./R/utils.R")
 ```
 
-The memory (RAM) and usage is quite high for simulations. Below there are some information about the RAM  usages per  CPU of simulations on Estonian data w/o last birth. The total number of CPUs used for running these simulations was 51. RAM usage varied between models but stayed around 18 GB per CPU core (dumped cores had a size range from 12 to 23GB).
+The memory (RAM) usage is quite high for simulations. The total number of CPUs used for running single simulation on Estonian data w/o last birth was 51. RAM usage varied between models but stayed around 18 GB per CPU core (dumped cores had a size range from 12 to 23GB).
 
 
 ```{r}
