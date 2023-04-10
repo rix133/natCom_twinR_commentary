@@ -69,7 +69,7 @@ Memory usage per CPU:
 ## Identify number of CPU cores available for parallel computing,
 ## note: using a large number may lead RAM to max out, so you may have to adjust
 ## that according to your infrastructure:
-nb_cores <- 50
+nb_cores <- 40
 
 #it seems that simulating the base model for Estonian not last birth data
 #requires about 15GB of RAM per CPU core (tested with 61 CPU cores)
@@ -184,12 +184,10 @@ pbmcapply::pbmclapply(scenarios_to_do, function(scenario) {
 
 ```{r run scenarios}
 for (scenario in scenarios_to_do) {
-
-   load(file = paste0(fitDir,"/fits_", scenario, "_obs.rda"))
-  
    name_obj <- paste0("slopes_under_", scenario)
    targetFname <- paste0(slopeDir,"/", name_obj, ".rda")
    if(!file.exists(targetFname)){
+     load(file = paste0(fitDir,"/fits_", scenario, "_obs.rda"))
      slopes_under_scenario <- simulate_slopes_for_GOF(N_replicates_level1 = 200L,
                                                       N_replicates_level2 = 20L,
                                                      birth_level_data = data_births_monthly,
