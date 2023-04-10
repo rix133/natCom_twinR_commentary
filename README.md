@@ -64,7 +64,7 @@ This repository has made few small fixes to 2 functions in twinR package in orde
 * cAIC calculation has been omitted from model summary table
 * fit summary table has been refactored to run seamlessly with 0 lambdas
 * Remove population from all models 
-* adding optional parameter *extraVars* to models that is appended to the formula (e.g to add pop do extraVars="+(1|pop)")
+* adding optional parameter *extraVars* to models that is appended to the formula (e.g to add pop do `extraVars="+(1|pop)"`)
 
 Also a function has been added to extract the last birth for each mother as well as some other convenience functions.
 
