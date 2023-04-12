@@ -65,7 +65,7 @@ The memory (RAM) usage is quite high for simulations. The total number of CPUs u
 ## Identify number of CPU cores available for parallel computing,
 ## note: using a large number may lead RAM to max out, so you may have to adjust
 ## that according to your infrastructure:
-nb_cores <- 40
+nb_cores <- 50
 
 #it seems that simulating the base model for Estonian not last birth data
 #requires about 15GB of RAM per CPU core (tested with 61 CPU cores)
@@ -211,14 +211,23 @@ for (scenario in scenarios_to_do) {
 ```
 
 
-```{r draw figure}
+```{r load slopes, include=FALSE}
 ## Combine simulated slopes:
 
 all_slopes <- combine_simulated_slopes(path_slopes = slopeDir)
+```
+
+```{r}
+#change the p-val expected direction
+source("./R/twinR_goodness_of_fit.R")
+
+# unchanged from the original but needed to have positive slopes yellow. 
+source("./R/twinR_fig_5.R")
+```
 
 
-## Figure 5:
-
+```{r draw figure}
+## Figure 5 with colours inverted as we look for positive slopes:
 fig5 <- draw_fig_5(all_slopes, width = 1)
 fig5Fname <- paste0("./exports/fig5_", expName, ".")
 ggplot2::ggsave(filename = paste0(fig5Fname, "pdf"), fig5,
@@ -237,10 +246,14 @@ knitr::kable(tableS13)
 ```
 
 
-```{r timing}
+```{r timing, results='asis'}
 ## computing time (for gof analysis):
-
-computing_time_analysis(all_slopes)
+timeHours <- computing_time_analysis(all_slopes)
+cat("Total CPU time to run simulations was ",
+    unlist(round(timeHours / 24, 2)), "days. ",
+    "On a high RAM desktop computer with 8 cores it would hence take around",
+    unlist(round(timeHours / 24 / 8, 0)), "days to run. However, on a standard ",
+    "desktop computer with 24 GB RAM only 1 core could be used.")
 
 ```
 
