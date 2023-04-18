@@ -38,7 +38,7 @@ fig_data_files <- sapply(LETTERS[1:3], function(l){
 })
 ```
 
-As running the *fit_life_histories* function with scenario “**PISH**” will fit all three life history models: *fit_PP*, *fit_IBI*, and *fit_twinning.binary*. The polynomial orders for each of these models will be estimated as the one leading to the best fit between 0 and 6. The *fit_PP* and *fit_IBI* functions will include the variable twin as a predictor. The *fit_twinning.binary* function will include *maternal_id* as a random effect predictor. So, it is equivalent to running each of these three functions with their default settings and the specified scenario. Hence, to produce the figure 4 equivalent we load these fits and get the fitted models from there.
+Running the *fit_life_histories* function with scenario “**PISH**” will fit all three life history models: *fit_PP*, *fit_IBI*, and *fit_twinning.binary*. The polynomial orders for each of these models will be estimated as the one leading to the best fit between 0 and 6. The *fit_PP* and *fit_IBI* functions will include the variable twin as a predictor. The *fit_twinning.binary* function will include *maternal_id* as a random effect predictor. So, it is equivalent to running each of these three functions with their default settings and the specified scenario. Hence, to produce the figure 4 equivalent we can load  these fits from the simulation scenario “**PISH**” and get the fitted models *fit_PP*, *fit_IBI*, and *fit_twinning.binary* from there.
 
 ```{r}
 if(!all(sapply(fig_data_files, file.exists))){
