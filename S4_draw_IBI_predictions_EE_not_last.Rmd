@@ -1,0 +1,153 @@
+---
+title: 'Suplementary Material 4: Draw Interbirth Interval Predictons on the Last Birth Omited Data'
+author: "Richard Meitern"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!is.null(knitr::opts_knit$get("rmarkdown.pandoc.to"))){
+ if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "docx"){
+ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+} 
+}
+
+options(digits = 9)
+options(scipen = 9)
+options(knitr.kable.NA="")
+```
+
+## Introduction
+
+The aim of this document is to display the R code needed the reproduce the original paper figure 4 equivalent on the Estonian dataset where the last births have been ommited.
+
+**NB!** Some of the code e.g reading in the data is same as in S1.
+
+```{r}
+#cleanup memory
+gcstuff <- gc(verbose=FALSE); rm(gcstuff);
+
+```
+
+```{r}
+cat("The current directory is: ", getwd())
+```
+
+
+```{r}
+#get last birth adding function
+source("./R/last_birth.R")
+
+#simplified twinR summary tables 
+source("./R/twinR_summary.R")
+
+#fix twinR compute predictions to do prediction with no lambda  as well
+source("./R/twinR_predictions.R")
+
+#simple convenience functions
+source("./R/utils.R")
+```
+
+
+```{r}
+## Identify number of CPU cores available for parallel computing,
+## note: using a large number may lead RAM to max out, so you may have to adjust
+## that according to your infrastructure:
+nb_cores <- 7
+
+#it seems that simulating the base model for Estonian not last birth data
+#requires about 15GB of RAM per CPU core (tested with 61 CPU cores)
+
+
+## Set option in spaMM:
+spaMM::spaMM.options(nb_cores = nb_cores)
+```
+
+
+## Data Import Estonia
+
+The Estonian dataset has been formatted to include the same columns as *the data_births_all* dataset from the **twinR** package. The only difference is that the columns *pop* and *monthly* are excluded as these are constant.
+
+```{r}
+#Import and preproccess Estonian Data
+
+data_births_monthly_EE <- readRDS("./data/data_births_all_EE.rds")
+
+#the twinR package expects population to be present
+data_births_monthly_EE$pop <- "Estonia" 
+
+data_births_monthly_EE <- add_last_birth(data_births_monthly_EE)
+
+data_births_monthly_EE_not_last <- data_births_monthly_EE[!data_births_monthly_EE$last,]
+
+```
+
+
+
+
+## Get Models
+
+```{r}
+fig_data_files <- sapply(LETTERS[1:3], function(l){
+  predDir <- "./data/predictions/"
+  paste0(predDir, "data_fig_4",l, ".rds")
+})
+```
+
+
+```{r}
+if(!all(sapply(fig_data_files, file.exists))){
+  fitDir <- "D:/hpc/projects/natCom_twinR_commentary/exports/fitted_models_EE_nl/"
+  load(paste0(fitDir, "fits_PISH_obs.rda")) # fit all
+  
+  data_fig_4A <- twinR::prepare_data_fig_4A(fits$fit_PP)
+  gcs <- gc(verbose = F)
+  saveRDS(data_fig_4A, paste0(predDir, "data_fig_4A", ".rds"))
+  
+  data_fig_4B <- twinR::prepare_data_fig_4B(fits$fit_IBI)
+  gcs <- gc(verbose = F)
+  saveRDS(data_fig_4B, paste0(predDir, "data_fig_4B", ".rds"))
+  
+  data_fig_4C <- twinR::prepare_data_fig_4C(fits$fit_twinning.binary)
+  gcs <- gc(verbose = F)
+  saveRDS(data_fig_4C, paste0(predDir, "data_fig_4C", ".rds"))
+} else{
+  for(l in LETTERS[1:3]){
+    assign(paste0("data_fig_4",l), readRDS(fig_data_files[l]))
+    }
+}
+
+```
+
+## Plot models 
+
+```{r}
+fig_4A <- twinR::draw_fig_4A(data_fig_4A)
+fig_4B <- twinR::draw_fig_4B(data_fig_4B)
+fig_4C <- twinR::draw_fig_4C(data_fig_4C)
+```
+
+```{r}
+twinR::plot_grid(fig_4A, fig_4B, fig_4C,
+          labels = "auto", nrow = 1, label_size = 7, align = "v", axis = "lr")
+```
+
+
+```{r}
+ggplot2::ggsave(file = "./exports/fig4.pdf", width = 180, height = 55, units = "mm")
+```
+
+
+
+
+
+
+
+
+```{r}
+#END
+```
+
