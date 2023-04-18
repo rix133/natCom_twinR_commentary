@@ -28,13 +28,48 @@ The aim of this document is to display the R code needed the reproduce the origi
 ```{r}
 cat("The current directory is: ", getwd())
 ```
+## Data Import Estonia
+
+```{r}
+#get last birth adding function
+source("./R/last_birth.R")
+```
+
+
+The Estonian dataset has been formatted to include the same columns as *the data_births_all* dataset from the **twinR** package. The only difference is that the columns *pop* and *monthly* are excluded as these are constant.
+
+```{r}
+#Import and preproccess Estonian Data
+
+data_births_monthly_EE <- readRDS("./data/data_births_all_EE.rds")
+
+#the twinR package expects population to be present
+data_births_monthly_EE$pop <- "Estonia" 
+
+## Expand the birth level data for the fit of statistical models:
+data_births_monthly_EE <- twinR::expand_data(data_births_monthly_EE)
+
+data_births_monthly_EE <- add_last_birth(data_births_monthly_EE)
+
+data_births_monthly_EE_not_last <- data_births_monthly_EE[!data_births_monthly_EE$last,]
+
+#make the aggregates
+dmm_EE <- twinR::aggregate_data(data_births_monthly_EE)
+dmm_EE$prob_twin <- dmm_EE$twin_total / dmm_EE$births_total
+
+dmm_EE_nl <- twinR::aggregate_data(data_births_monthly_EE_not_last)
+dmm_EE_nl$prob_twin <- dmm_EE_nl$twin_total / dmm_EE_nl$births_total
+
+#remove the unused
+rm(data_births_monthly_EE, dmm_EE, data_births_monthly_EE_not_last)
+```
 
 ## Get Models
 
 ```{r}
-fig_data_files <- sapply(LETTERS[1:3], function(l){
-  predDir <- "./data/predictions/"
-  paste0(predDir, "data_fig_4",l, ".rds")
+predDir <- "./data/predictions/"
+fig_data_files <- sapply(LETTERS[1:4], function(l){
+  paste0(predDir, "data_fig_",l, ".rds")
 })
 ```
 
@@ -42,23 +77,33 @@ Running the *fit_life_histories* function with scenario “**PISH**” will fit 
 
 ```{r}
 if(!all(sapply(fig_data_files, file.exists))){
+  #wherever you have stored the fits 
   fitDir <- "D:/hpc/projects/natCom_twinR_commentary/exports/fitted_models_EE_nl/"
-  load(paste0(fitDir, "fits_PISH_obs.rda")) # fit all
   
-  data_fig_4A <- twinR::prepare_data_fig_4A(fits$fit_PP)
-  gcs <- gc(verbose = F)
-  saveRDS(data_fig_4A, paste0(predDir, "data_fig_4A", ".rds"))
+  #load(paste0(fitDir, "fits_PISH_obs.rda")) # load all fits all ~ 8 GB
   
-  data_fig_4B <- twinR::prepare_data_fig_4B(fits$fit_IBI)
+  data_fig_A <- twinR::prepare_data_fig_4A(fits$fit_PP)
   gcs <- gc(verbose = F)
-  saveRDS(data_fig_4B, paste0(predDir, "data_fig_4B", ".rds"))
+  saveRDS(data_fig_A, paste0(predDir, "data_fig_A", ".rds"))
   
-  data_fig_4C <- twinR::prepare_data_fig_4C(fits$fit_twinning.binary)
+  data_fig_B <- twinR::prepare_data_fig_4B(fits$fit_IBI)
   gcs <- gc(verbose = F)
-  saveRDS(data_fig_4C, paste0(predDir, "data_fig_4C", ".rds"))
+  saveRDS(data_fig_B, paste0(predDir, "data_fig_B", ".rds"))
+  
+  data_fig_C <- twinR::prepare_data_fig_4C(fits$fit_twinning.binary)
+  gcs <- gc(verbose = F)
+  saveRDS(data_fig_C, paste0(predDir, "data_fig_C", ".rds"))
+  
+  data_fig_D <- twinR::prepare_data_fig_S2(fit_PP = fits$fit_PP,
+                                           fit_IBI = fits$fit_IBI,
+                                           fit_twin = fits$fit_twinning.binary,
+                                           mother_level_data = dmm_EE_nl)
+  gcs <- gc(verbose = F)
+  saveRDS(data_fig_D, paste0(predDir, "data_fig_D", ".rds"))
+  rm(fits)
 } else{
-  for(l in LETTERS[1:3]){
-    assign(paste0("data_fig_4",l), readRDS(fig_data_files[l]))
+  for(l in LETTERS[1:4]){
+    assign(paste0("data_fig_",l), readRDS(fig_data_files[l]))
     }
 }
 
@@ -69,9 +114,9 @@ if(!all(sapply(fig_data_files, file.exists))){
 Next we plot the models exactly as in the original manuscript. Note that the actual parity is +1 than the number on the graphs (because the last birth is omitted in this data, so the *parity* axis shows the parity up until the one to last).
 
 ```{r}
-fig_4A <- twinR::draw_fig_4A(data_fig_4A)
-fig_4B <- twinR::draw_fig_4B(data_fig_4B)
-fig_4C <- twinR::draw_fig_4C(data_fig_4C)
+fig_4A <- twinR::draw_fig_4A(data_fig_A)
+fig_4B <- twinR::draw_fig_4B(data_fig_B)
+fig_4C <- twinR::draw_fig_4C(data_fig_C)
 ```
 
 ```{r}
@@ -87,6 +132,11 @@ ggplot2::ggsave(file = "./exports/fig4.pdf", width = 180, height = 55, units = "
 
 
 
+```{r}
+fig_S2 <- twinR::draw_fig_S2(data_fig_D)
+
+ggsave(file = "./exports/figS2.pdf", width = 188, height = 110, units = "mm")
+```
 
 
 
