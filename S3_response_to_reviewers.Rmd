@@ -193,7 +193,6 @@ cat("Estonian dataset:\n")
 tbl <- table(data_births_monthly_EE[c("twin", "last")])
 tbl
 cat("\n")
-tbl <- tbl / sum(tbl)
 #now calcualte the % by hand
 cat("Last twins: ", round(100 * tbl[2,2] / sum(tbl[,2]), 2), "%\n")
 cat("Prior twins: ",round(100 * tbl[2,1] / sum(tbl[,1]), 2), "%\n")
@@ -206,7 +205,6 @@ cat("Western dataset:\n")
 tbl <- table(data_births_monthly[c("twin", "last")])
 tbl
 cat("\n")
-tbl <- tbl / sum(tbl)
 #now calcualte the % by hand
 cat("Last twins: ", round(100 * tbl[2,2] / sum(tbl[,2]), 2), "%\n")
 cat("Prior twins: ",round(100 * tbl[2,1] / sum(tbl[,1]), 2), "%\n")
