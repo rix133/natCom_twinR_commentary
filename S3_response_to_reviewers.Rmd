@@ -187,6 +187,32 @@ odds_ratios <- exp(coef)
 For the other dataset the odds of a birth event being the last one for a mother are `r round(odds_ratios[2], 3)` times higher for a twin birth than for a singleton birth.
 
 
+```{r}
+#compare the precentage of twin births between last births and not last births
+cat("Estonian dataset:\n")
+tbl <- table(data_births_monthly_EE[c("twin", "last")])
+tbl
+cat("\n")
+tbl <- tbl / sum(tbl)
+#now calcualte the % by hand
+cat("Last twins: ", round(100 * tbl[2,2] / sum(tbl[,2]), 2), "%\n")
+cat("Prior twins: ",round(100 * tbl[2,1] / sum(tbl[,1]), 2), "%\n")
+
+```
+
+```{r}
+#compare the precentage of twin births between last births and not last births
+cat("Western dataset:\n")
+tbl <- table(data_births_monthly[c("twin", "last")])
+tbl
+cat("\n")
+tbl <- tbl / sum(tbl)
+#now calcualte the % by hand
+cat("Last twins: ", round(100 * tbl[2,2] / sum(tbl[,2]), 2), "%\n")
+cat("Prior twins: ",round(100 * tbl[2,1] / sum(tbl[,1]), 2), "%\n")
+
+```
+
 
 
 
