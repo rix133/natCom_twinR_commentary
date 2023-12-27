@@ -1,0 +1,305 @@
+---
+title: 'Suplementary Material 3: Code to Respond to Reviewers'
+author: "Richard Meitern"
+date: "`r Sys.Date()`"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!is.null(knitr::opts_knit$get("rmarkdown.pandoc.to"))){
+ if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "docx"){
+ knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+} 
+}
+
+options(digits = 9)
+options(scipen = 9)
+options(knitr.kable.NA="")
+```
+
+## Introduction
+
+The aim of this document is to respond to the reviewers comments. The comments are:
+
+1) I would like to see whether indeed mothers are statistically more likely to stop having children after a twin birth (perhaps I missed that analysis and it was indeed presented)?
+
+2) Directly test the odds that a mother terminate reproduction after a twin birth? In other words, use statistics to assess post-twinning reproductive outcomes compared to post-singleton reproductive outcomes.
+
+3) Plot the real data as a cloud of points behind these lines- it is important to see the actual dataset in analyses like these. 
+
+4) Look at the analyses when limiting to opposite-sex offspring? 
+
+5) Based on analyses of Finnish data from 1953-1964 Eriksson and Fellman show that illegitimate maternities have a higher twinning rate than legitimate ones when maternal age and birth order are taken into account. They speculate that unmarried mothers are women who tend to become pregnant more easily than others owing to the effect of certain factors, e.g. a higher ovulation rate and to have relatively better physical qualifications for going through a twin pregnancy than mothers in general. 
+It seems not unlikely that such mothers may remain single of the twin pregnancy, especially in earlier times?
+
+
+```{r}
+#cleanup memory
+gcstuff <- gc(verbose=FALSE); rm(gcstuff);
+```
+
+
+```{r}
+#get last birth adding function
+source("./R/last_birth.R")
+
+#simplified twinR summary tables 
+source("./R/twinR_summary.R")
+
+#fix twinR compute predictions to do prediction with no lambda  as well
+source("./R/twinR_predictions.R")
+
+#simple convenience functions
+source("./R/utils.R")
+```
+
+
+```{r}
+## Identify number of CPU cores available for parallel computing,
+## note: using a large number may lead RAM to max out, so you may have to adjust
+## that according to your infrastructure:
+nb_cores <- min(c(50L, parallel::detectCores() - 1))
+
+## Set option in spaMM:
+spaMM::spaMM.options(nb_cores = nb_cores)
+```
+
+
+## Data Import 
+
+The Estonian dataset has been formatted to include the same columns as *the data_births_all* dataset from the **twinR** package. The only difference is that the columns *pop* and *monthly* are excluded as these are constant.
+
+```{r}
+#some labels
+estLab <- "Estonian"
+westLab <- "9 other European"
+```
+
+```{r}
+#Import and preproccess Estonian Data
+
+data_births_monthly_EE <- readRDS("./data/data_births_all_EE.rds")
+
+#the twinR package expects population to be present
+data_births_monthly_EE$pop <- "Estonia" 
+
+## Expand the birth level data for the fit of statistical models:
+data_births_monthly_EE <- twinR::expand_data(data_births_monthly_EE)
+
+data_births_monthly_EE <- add_last_birth(data_births_monthly_EE)
+
+data_births_monthly_EE_not_last <- data_births_monthly_EE[!data_births_monthly_EE$last,]
+
+#make the aggregates
+dmm_EE <- twinR::aggregate_data(data_births_monthly_EE)
+dmm_EE$prob_twin <- dmm_EE$twin_total / dmm_EE$births_total
+
+dmm_EE_nl <- twinR::aggregate_data(data_births_monthly_EE_not_last)
+dmm_EE_nl$prob_twin <- dmm_EE_nl$twin_total / dmm_EE_nl$births_total
+```
+
+
+
+```{r}
+##Import and pre-proccess twinR package data
+
+## Filter the raw data to only keep data with monthly resolution:
+data_births_monthly <- twinR::filter_data(twinR::data_births_all) 
+
+## Expand the birth level data for the fit of statistical models:
+data_births_monthly <- twinR::expand_data(data_births_monthly) 
+
+data_births_monthly <- add_last_birth(data_births_monthly)
+data_births_monthly_not_last <- data_births_monthly[!data_births_monthly$last,]
+
+dmm_orig <- twinR::aggregate_data(data_births_monthly)
+dmm_orig$prob_twin <- dmm_orig$twin_total /dmm_orig$births_total
+
+dmm_orig_nl <- twinR::aggregate_data(data_births_monthly_not_last)
+dmm_orig_nl$prob_twin <- dmm_orig_nl$twin_total /dmm_orig_nl$births_total
+
+```
+
+
+```{r}
+#compared to twinR original add data on :
+#-age at first birth (AFB)
+#-quantiles range mother birth year
+#-quantiles range offspring birth year
+#-mean + SE total births
+all_tbls <- rbind(build_data_summary.table(data_births_monthly),
+                  build_data_summary.table(data_births_monthly_not_last),
+                  build_data_summary.table(data_births_monthly_EE),
+                  build_data_summary.table(data_births_monthly_EE_not_last))
+```
+
+
+
+
+## Fitting models
+
+
+
+### Comment 1: Logistic regression
+
+We can test the hypothesis that mothers are statistically more likely to stop having children after a twin birth by fitting a logistic regression model with the response variable being the binary variable *last* and the predictor variable being the binary variable *twin*.
+
+```{r}
+#fit logistic regression Estonia
+logit_fit_EE <- glm(last ~ twin,
+                 data = data_births_monthly_EE,
+                 family = binomial(link = "logit"))
+summary(logit_fit_EE)
+```
+
+
+```{r}
+#fit logistic regression Other European
+logit_fit <- glm(last ~ twin,
+                 data = data_births_monthly,
+                 family = binomial(link = "logit"))
+summary(logit_fit)
+```
+### Comment 2: Proportion of twins
+
+The same test gives us the odds of mothers having more children after a twin birth. 
+
+```{r}
+# Extract coefficients
+coef <- coef(logit_fit_EE)
+
+# Calculate odds ratios
+odds_ratios <- exp(coef)
+```
+For the Estonian dataset the  odds of a birth event being the last one for a mother are `r round(odds_ratios[2], 3)` times higher for a twin birth than for a singleton birth.
+
+```{r}
+# Extract coefficients
+coef <- coef(logit_fit)
+
+# Calculate odds ratios
+odds_ratios <- exp(coef)
+
+```
+For the other dataset the odds of a birth event being the last one for a mother are `r round(odds_ratios[2], 3)` times higher for a twin birth than for a singleton birth.
+
+
+
+
+
+
+## Comment 3: Original Data on Plots 
+
+The reviewers also asked to put the data on the Figure 1.
+
+```{r}
+# import the function to do model fit and predictions
+source("./R/fit_models.R")
+```
+
+```{r}
+## full data
+
+## Estonia - mother level data
+formula <- "cbind(twin_total, singleton_total) ~ 1 + births_total"
+dmm_EE_fit <- fitPredictions(dmm_EE, formula, predict = T)
+
+
+
+## TwinR - mother level data
+formula <- "cbind(twin_total, singleton_total) ~ 1 + births_total + (1|pop)"
+dmm_orig_fit <- fitPredictions(dmm_orig, formula, predict=T)
+
+
+```
+
+
+
+
+```{r}
+library(ggplot2)
+#some nice colors
+bc <- c("azure4","purple4", "black", "navy", "darkgoldenrod2", "springgreen3", "gray")
+
+#use new base theme that displays also grid lines
+source("./R/twinR_theme.R")
+```
+
+
+
+### Fig 1a: Estonian vs TwinR Full Data
+
+```{r}
+
+fig2_EE_plot_data <- dmm_EE_fit$results
+fig2_orig_plot_data <- dmm_orig_fit$results
+```
+
+```{r, fig.height=11.7/2, fig.width=8.3}
+infoTxt <- "model prediction with 95% CI and data with values"
+
+fig2_ext_orig <- ggplot() +  
+  geom_line(data=fig2_EE_plot_data,
+              aes(y = estimate,  x=births_total, color=estLab),  size = 1) +
+  geom_point(data=dmm_EE[dmm_EE$births_total <17, ],
+               aes(x=births_total, y=prob_twin, color=estLab, fill = estLab),
+               alpha=0.1,
+               position = position_nudge(x = -0.1)) +
+    stat_summary(data=dmm_EE[dmm_EE$births_total <17, ],
+                 aes(x=births_total, y=prob_twin, color=estLab, fill = estLab),
+                 alpha=0.1,
+                 position = position_jitter(),
+                 fun.data=mean_se) +
+    
+    geom_ribbon(data=fig2_EE_plot_data,
+                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                    color=estLab, fill = estLab),
+                alpha = 0.3) + 
+    geom_line(data=fig2_orig_plot_data,
+             aes(y = estimate,  x=births_total, color=westLab),  size = 1) +
+  geom_point(data=dmm_orig[dmm_orig$births_total <19, ],
+               aes(x=births_total, y=prob_twin, color=estLab, fill = estLab),
+               alpha=0.1,
+               position = position_jitter()) +
+    stat_summary(data=dmm_orig[dmm_orig$births_total <19, ],
+                 aes(x=births_total, y=prob_twin,
+                     color=westLab, fill=westLab),
+                 alpha=1,
+                 shape = 1,
+                 position = position_nudge(x = 0.1),
+                 fun.data=mean_se) +
+    geom_ribbon(data=fig2_orig_plot_data,
+                aes(y = estimate,  x=births_total, ymin = lwr, ymax = upr,
+                    fill=westLab),
+                alpha = 0.1) +
+    ggplot2::scale_x_continuous(breaks = 1:18) + 
+   
+    ggplot2::coord_cartesian() +
+    labs(subtitle = paste0("(a) All births, ", infoTxt),
+         y="Per-birth twin. prob.",
+         x="Maternal total births")
+p2 <- fig2_ext_orig + base_theme(larger=8) + scale_color_manual(values=bc) + 
+  scale_fill_manual(values=bc) + guides(color="none") + labs(fill = "population")
+
+p2
+```
+
+
+The first plot clearly illustrates that we cannot plot the whole data itself on the plot, as there are women who only gave birth to twins. We can plot a subset (eg those with at least 10 children) but this would lose the point of the plot. There is just so much data that is semi-categorical that we cannot think of a way put into a plot so that it gives additional information.
+
+
+
+## Comment 4: Dizygotic Twins
+
+
+## Comment 5: Unmarried Mothers
+
+
+
+```{r}
+#END
+```
+
