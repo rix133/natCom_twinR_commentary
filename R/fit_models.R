@@ -56,11 +56,12 @@ fitPredictions <- function(dataset, formula,
   get_predictions <- function(predDataFname, fit, dataset, args, save){
     if(!file.exists(predDataFname)){
       nd <- NULL
+      min_births <- min(dataset$births_total)
+      max_births <- max(dataset$births_total)
+      births <- max_births-min_births + 1
       
       # mother level data
       if("births_total" %in% all.vars(args$formula)){
-        min_births <- min(dataset$births_total)
-        max_births <- max(dataset$births_total)
         nd <- data.frame(births_total = min_births:max_births)
       }
       #birth level data
@@ -69,6 +70,15 @@ fitPredictions <- function(dataset, formula,
         ## remove the twin covariate, which is not used in twin_fit:
         nd  <-  nd[nd$twin,] 
         nd$twin <- NULL
+      }
+      
+      if('illigimate_birth' %in% all.vars(args$formula)){
+        nd <- data.frame(births_total = rep(min_births:max_births, 2),
+                         illigimate_birth = c(rep(T, births), rep(F, births)))
+      }
+      if('illigimate_conception' %in% all.vars(args$formula)){
+        nd <- data.frame(births_total = rep(min_births:max_births, 2),
+                         illigimate_conception = c(rep(T, births), rep(F, births)))
       }
       
       if(!is.null(nd)){
