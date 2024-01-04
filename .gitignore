@@ -1,5 +1,8 @@
 #custom exports
-/exports/
+exports/*
+
+#keep simulations
+!exports/slopes_under_scenarios_EE_nl
 
 #testing stuff
 test.Rmd

@@ -1,0 +1,148 @@
+---
+title: 'Suplementary Code 4: Draw Interbirth Interval Predictons on the Last Birth Omited Data'
+author: "Richard Meitern"
+date: "`r Sys.Date()`"
+output:
+  pdf_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+if(!is.null(knitr::opts_knit$get("rmarkdown.pandoc.to"))){
+ if (knitr::opts_knit$get("rmarkdown.pandoc.to") == "docx"){
+ knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
+} 
+}
+
+options(digits = 9)
+options(scipen = 9)
+options(knitr.kable.NA="")
+```
+
+## Introduction
+
+The aim of this document is to display the R code needed the reproduce the original paper figure 4 equivalent on the Estonian dataset where the last births have been omitted.
+
+
+```{r}
+cat("The current directory is: ", getwd())
+```
+## Data Import Estonia
+
+```{r}
+#get last birth adding function
+source("./R/last_birth.R")
+```
+
+
+The Estonian dataset has been formatted to include the same columns as *the data_births_all* dataset from the **twinR** package. The only difference is that the columns *pop* and *monthly* are excluded as these are constant.
+
+```{r}
+#Import and preproccess Estonian Data
+
+data_births_monthly_EE <- readRDS("./data/data_births_all_EE.rds")
+
+#the twinR package expects population to be present
+data_births_monthly_EE$pop <- "Estonia" 
+
+## Expand the birth level data for the fit of statistical models:
+data_births_monthly_EE <- twinR::expand_data(data_births_monthly_EE)
+
+data_births_monthly_EE <- add_last_birth(data_births_monthly_EE)
+
+data_births_monthly_EE_not_last <- data_births_monthly_EE[!data_births_monthly_EE$last,]
+
+#make the aggregates
+dmm_EE <- twinR::aggregate_data(data_births_monthly_EE)
+dmm_EE$prob_twin <- dmm_EE$twin_total / dmm_EE$births_total
+
+dmm_EE_nl <- twinR::aggregate_data(data_births_monthly_EE_not_last)
+dmm_EE_nl$prob_twin <- dmm_EE_nl$twin_total / dmm_EE_nl$births_total
+
+#remove the unused
+rm(data_births_monthly_EE, dmm_EE, data_births_monthly_EE_not_last)
+```
+
+## Get Models
+
+```{r}
+predDir <- "./data/predictions/"
+fig_data_files <- sapply(LETTERS[1:4], function(l){
+  paste0(predDir, "data_fig_",l, ".rds")
+})
+```
+
+Running the *fit_life_histories* function with scenario “**PISH**” will fit all three life history models: *fit_PP*, *fit_IBI*, and *fit_twinning.binary*. The polynomial orders for each of these models will be estimated as the one leading to the best fit between 0 and 6. The *fit_PP* and *fit_IBI* functions will include the variable twin as a predictor. The *fit_twinning.binary* function will include *maternal_id* as a random effect predictor. So, it is equivalent to running each of these three functions with their default settings and the specified scenario. Hence, to produce the figure 4 equivalent we can load  these fits from the simulation scenario “**PISH**” and get the fitted models *fit_PP*, *fit_IBI*, and *fit_twinning.binary* from there.
+
+```{r}
+if(!all(sapply(fig_data_files, file.exists))){
+  #wherever you have stored the fits 
+  fitDir <- "D:/hpc/projects/natCom_twinR_commentary/exports/fitted_models_EE_nl/"
+  
+  load(paste0(fitDir, "fits_PISH_obs.rda")) # load all fits all ~ 8 GB
+  
+  data_fig_A <- twinR::prepare_data_fig_4A(fits$fit_PP)
+  gcs <- gc(verbose = F)
+  saveRDS(data_fig_A, paste0(predDir, "data_fig_A", ".rds"))
+  
+  data_fig_B <- twinR::prepare_data_fig_4B(fits$fit_IBI)
+  gcs <- gc(verbose = F)
+  saveRDS(data_fig_B, paste0(predDir, "data_fig_B", ".rds"))
+  
+  data_fig_C <- twinR::prepare_data_fig_4C(fits$fit_twinning.binary)
+  gcs <- gc(verbose = F)
+  saveRDS(data_fig_C, paste0(predDir, "data_fig_C", ".rds"))
+  
+  data_fig_D <- twinR::prepare_data_fig_S2(fit_PP = fits$fit_PP,
+                                           fit_IBI = fits$fit_IBI,
+                                           fit_twin = fits$fit_twinning.binary,
+                                           mother_level_data = dmm_EE_nl)
+  gcs <- gc(verbose = F)
+  saveRDS(data_fig_D, paste0(predDir, "data_fig_D", ".rds"))
+  rm(fits)
+} else{
+  for(l in LETTERS[1:4]){
+    assign(paste0("data_fig_",l), readRDS(fig_data_files[l]))
+    }
+}
+
+```
+
+## Plot models 
+
+Next we plot the models exactly as in the original manuscript. Note that the actual parity is +1 than the number on the graphs (because the last birth is omitted in this data, so the *parity* axis shows the parity up until the one to last).
+
+```{r}
+fig_4A <- twinR::draw_fig_4A(data_fig_A)
+fig_4B <- twinR::draw_fig_4B(data_fig_B)
+fig_4C <- twinR::draw_fig_4C(data_fig_C)
+```
+
+```{r}
+twinR::plot_grid(fig_4A, fig_4B, fig_4C,
+          labels = "auto", nrow = 1, label_size = 7, align = "v", axis = "lr")
+```
+
+
+```{r}
+ggplot2::ggsave(file = "./exports/fig4.pdf", width = 180, height = 55, units = "mm")
+```
+
+
+
+
+```{r}
+fig_S2 <- twinR::draw_fig_S2(data_fig_D)
+
+ggplot2::ggsave(file = "./exports/figS2.pdf", width = 188, height = 110, units = "mm")
+ggplot2::ggsave(file = "./exports/figS2.png", width = 188, height = 110, units = "mm")
+```
+
+
+
+
+```{r}
+#END
+```
+
