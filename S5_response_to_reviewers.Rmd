@@ -1,5 +1,5 @@
 ---
-title: 'Suplementary Material 3: Code to Respond to Reviewers'
+title: 'Suplementary Code 5: Code to Respond to Reviewers'
 author: "Richard Meitern"
 date: "`r Sys.Date()`"
 output:
@@ -149,19 +149,21 @@ We can test the hypothesis that mothers are statistically more likely to stop ha
 
 ```{r}
 #fit logistic regression Estonia
-logit_fit_EE <- glm(last ~ twin,
+logit_fit_EE <- glm(twin ~  last,
                  data = data_births_monthly_EE,
                  family = binomial(link = "logit"))
-summary(logit_fit_EE)
+summary_logit_fit_EE <-  summary(logit_fit_EE)
+summary_logit_fit_EE
 ```
 
 
 ```{r}
 #fit logistic regression Other European
-logit_fit <- glm(last ~ twin,
+logit_fit <- glm(twin ~  last,
                  data = data_births_monthly,
                  family = binomial(link = "logit"))
-summary(logit_fit)
+summary_logit_fit_W <-  summary(logit_fit)
+summary_logit_fit_W
 ```
 
 ### Comment 2: Proportion of twins
@@ -212,19 +214,79 @@ cat("Prior twins: ",round(100 * tblw[2,1] / sum(tblw[,1]), 2), "%\n")
 
 ```
 
+
+
+
+#### Test the Interaction 
+
 ```{r}
-# Combine the two tables into a 3-dimensional array
-tbl <- array(c(tble, tblw), dim = c(dim(tble), 2))
+data_births_monthly$monthly <- NULL
+#data_births_monthly$pop <- "Western"
+dbmFull <- rbind(data_births_monthly_EE[colnames(data_births_monthly)],
+                 data_births_monthly)
+dbmFull$popEE <- dbmFull$pop == "Estonia"
+```
 
-#numeric problem workaround
-tbl <- tbl / 1
+```{r}
+#fit logistic regression
+logit_fit_full <- glm(twin ~  last + popEE + popEE:last,
+                 data = dbmFull,
+                 family = binomial(link = "logit"))
+summary_logit_fit_full <-  summary(logit_fit_full)
+summary_logit_fit_full
 
-# Perform the Mantel-Haenszel test
-mantelhaen.test(tbl)
 ```
 
 
+```{r}
+#' Get Coefficient Table
+#'
+#' This function returns a table with odds ratios and their confidence intervals.
+#'
+#' @param summary A summary object from a glm model.
+#' @param datasetname A character string specifying the name of the dataset.
+#'
+#' @return A data frame with odds ratios and their confidence intervals.
+get_coef_tbl <- function(summary, datasetname){
+  tbl <- as.data.frame(summary$coefficients)
+  tbl$dataset <- datasetname
+  tbl$variable <- rownames(tbl)
+  tbl$`Odds Ratio` <- exp(tbl$Estimate)
+  tbl$`CI low` <- exp(tbl$Estimate - 1.96 * tbl$`Std. Error`)
+  tbl$`CI high` <- exp(tbl$Estimate + 1.96 * tbl$`Std. Error`)
+  rownames(tbl) <- NULL
+  tbl <- tbl[,c(5,6,7:9)]
+  return(tbl)
+}
 
+
+#print all coeficient tables in one table
+#add dataset name to each table
+coefEEtbl <- get_coef_tbl(summary_logit_fit_EE, "Estonia")
+ceofWtbl <- get_coef_tbl(summary_logit_fit_W, "Western")
+ceofFulltbl <- get_coef_tbl(summary_logit_fit_full, "Combined")
+
+
+
+tbl <- rbind(coefEEtbl, ceofWtbl, ceofFulltbl)
+knitr::kable(tbl, digits = 3, caption = "Odds ratios and confidence intervals for the logistic regression model with the response variable being the binary variable *twin* and the predictor variable being the binary variable *last*.")
+```
+```{r}
+#print the frequency table
+frqTbl <- aggregate(maternal_id ~ twin + last + popEE,
+                    data = dbmFull, FUN = length)
+
+
+# Rename the variables inside the columns
+frqTbl$twin <- ifelse(frqTbl$twin == TRUE, "twins", "singleton")
+frqTbl$last <- ifelse(frqTbl$last == TRUE, "Yes", "No")
+frqTbl$popEE <- ifelse(frqTbl$popEE == TRUE, "Estonia", "Western")
+
+# Rename the column names
+colnames(frqTbl) <- c("Birth", "Last Breeding", "Population", "Count")
+knitr::kable(frqTbl, digits = 0, caption = "Frequency table of the data used for the logistic regression model with the response variable being the binary variable *twin* and the predictor variable being the binary variable *last*.")
+
+```
 
 
 
