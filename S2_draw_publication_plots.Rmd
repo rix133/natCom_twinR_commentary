@@ -1,5 +1,5 @@
 ---
-title: 'Suplementary Material 2: Drawing Publication Plots'
+title: 'Suplementary Code 2: Drawing Publication Plots'
 author: "Richard Meitern"
 date: "`r Sys.Date()`"
 output:

@@ -1,5 +1,5 @@
 ---
-title: 'Suplementary Material 3: Run Simulations on the Last Birth Omited Data'
+title: 'Suplementary Code 3: Run Simulations on the Last Birth Omited Data'
 author: "Richard Meitern"
 date: "`r Sys.Date()`"
 output:

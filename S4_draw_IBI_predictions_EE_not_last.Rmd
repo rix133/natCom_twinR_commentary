@@ -1,5 +1,5 @@
 ---
-title: 'Suplementary Material 4: Draw Interbirth Interval Predictons on the Last Birth Omited Data'
+title: 'Suplementary Code 4: Draw Interbirth Interval Predictons on the Last Birth Omited Data'
 author: "Richard Meitern"
 date: "`r Sys.Date()`"
 output:
