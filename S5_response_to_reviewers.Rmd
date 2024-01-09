@@ -139,17 +139,15 @@ all_tbls <- rbind(build_data_summary.table(data_births_monthly),
 
 
 
-## Fitting models
 
 
-
-### Comment 1: Logistic regression
+## Comment 1: Logistic regression
 
 We can test the hypothesis that mothers are statistically more likely to stop having children after a twin birth by fitting a logistic regression model with the response variable being the binary variable *last* and the predictor variable being the binary variable *twin*.
 
 ```{r}
 #fit logistic regression Estonia
-logit_fit_EE <- glm(twin ~  last,
+logit_fit_EE <- glm(last ~  twin,
                  data = data_births_monthly_EE,
                  family = binomial(link = "logit"))
 summary_logit_fit_EE <-  summary(logit_fit_EE)
@@ -159,14 +157,14 @@ summary_logit_fit_EE
 
 ```{r}
 #fit logistic regression Other European
-logit_fit <- glm(twin ~  last,
+logit_fit <- glm(last  ~  twin,
                  data = data_births_monthly,
                  family = binomial(link = "logit"))
 summary_logit_fit_W <-  summary(logit_fit)
 summary_logit_fit_W
 ```
 
-### Comment 2: Proportion of twins
+## Comment 2: Proportion of twins
 
 The same test gives us the odds of mothers having more children after a twin birth. 
 
@@ -217,7 +215,29 @@ cat("Prior twins: ",round(100 * tblw[2,1] / sum(tblw[,1]), 2), "%\n")
 
 
 
-#### Test the Interaction 
+#### Test the Population Interaction 
+
+We check if the population has an effect in a reversed model where the predictor variable is the binary variable *last* and the response variable is the binary variable *twin*. 
+
+
+```{r}
+#fit logistic regression Estonia
+logit_fit_EE <- glm(twin ~  last,
+                 data = data_births_monthly_EE,
+                 family = binomial(link = "logit"))
+summary_logit_fit_EE <-  summary(logit_fit_EE)
+summary_logit_fit_EE
+```
+
+
+```{r}
+#fit logistic regression Other European
+logit_fit <- glm(twin ~  last,
+                 data = data_births_monthly,
+                 family = binomial(link = "logit"))
+summary_logit_fit_W <-  summary(logit_fit)
+summary_logit_fit_W
+```
 
 ```{r}
 data_births_monthly$monthly <- NULL
@@ -387,13 +407,13 @@ p2
 ```
 
 
-The first plot clearly illustrates that we cannot plot the whole data itself on the plot, as there are women who only gave birth to twins. We can plot a subset (e.g. those with at least 10 children) but this would lose the point of the plot. There is just so much data that is semi-categorical that we cannot think of a way put into a plot so that it gives additional information.
+The plot illustrates that we cannot plot the raw data along with model predictions, as such figure would be un-informative and highly confusing. We cannot think of a way about how to put such an amount of semi-categorical data into a plot so that it would give additional information.
 
 
 
-## Comment 4: Dizygotic Twins
+## Comment 4: Opposite-sex Twins
 
-We can do the same analysis for dizygotic twins.
+We can do the same analysis for opposite-sex  twins.
 
 ```{r}
 #re-import the data
@@ -516,7 +536,7 @@ p2 <- fig2_ext_orig + base_theme(larger=8) + scale_color_manual(values=bc) +
 p2 
 ```
 
-The mixed sex twinning rate seem to remain constant if last births are excluded from the data and slightly decline if last births are included. The decline seems not to be significant. 
+The mixed sex twinning rate is independent on the number of total births if last births are excluded from the data. If last births are included, the association between mixed sex twinning rate and number of total births is negative. 
 
 ## Comment 5: Illegitimate Maternities
 
